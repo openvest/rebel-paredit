@@ -29,6 +29,7 @@
     EndOfFileException
     EOFError
     Widget]
+   [org.jline.widget AutopairWidgets]
    [org.jline.reader.impl LineReaderImpl DefaultParser BufferImpl]
    [org.jline.terminal TerminalBuilder]
    [org.jline.terminal.impl DumbTerminal]
@@ -43,6 +44,7 @@
   {:completion true
    :indent true
    :eldoc true
+   :autopair true
    :highlight true
    :redirect-output true
    :key-map :emacs
@@ -477,6 +479,23 @@
        (cursor (+ indent-amount (- curs leading-white-space))))))
    ;; return true to re-render
    true))
+
+;why doesn't this work in add-all-widgets?
+(defn autopair-widget
+  "create AutopairWidgets on the currently bound *line-reader*"
+  []
+  (let [autopair (AutopairWidgets.  *line-reader* true)
+        ;; this wants to autopair ' and ` which is not cool for clojure
+        ;; lets remove them from the widget/paris  (hard because pairs map is not public)
+        field (-> AutopairWidgets
+                  (.getDeclaredField "pairs")
+                  (doto (.setAccessible true)))
+        pairs (.get field autopair)]
+    (doto pairs
+      (.remove "'")
+      (.remove "`"))
+    (doto autopair
+      (.enable))))
 
 (def indent-or-complete-widget
   (create-widget

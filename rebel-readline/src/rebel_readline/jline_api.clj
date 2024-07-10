@@ -25,7 +25,7 @@
    [java.io Writer]
    [org.jline.utils AttributedStringBuilder AttributedString AttributedStyle]))
 
-(def ^:dynamic *terminal* nil)
+(defonce ^:dynamic *terminal* nil)
 (def ^:dynamic *line-reader* nil)
 (def ^:dynamic *buffer* nil)
 
