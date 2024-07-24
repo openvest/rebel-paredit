@@ -483,17 +483,19 @@
 ;why doesn't this work in add-all-widgets?
 (defn autopair-widget
   "create AutopairWidgets on the currently bound *line-reader*"
-  []
-  (let [autopair (AutopairWidgets.  *line-reader* true)
+  [line-reader]
+  (let [autopair (AutopairWidgets. line-reader true)
         ;; this wants to autopair ' and ` which is not cool for clojure
         ;; lets remove them from the widget/paris  (hard because pairs map is not public)
         field (-> AutopairWidgets
                   (.getDeclaredField "pairs")
                   (doto (.setAccessible true)))
         pairs (.get field autopair)]
+    (swap! line-reader assoc :autopair-widgets autopair)
     (doto pairs
       (.remove "'")
-      (.remove "`"))
+      (.remove "`")
+      (.remove " "))
     (doto autopair
       (.enable))))
 
