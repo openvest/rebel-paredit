@@ -47,7 +47,7 @@
       (.read wr ca)
       (.read wr ca)
       (.read wr ca)
-      (into [] ca)
-      ))
+      (into [] ca))))
 
-  )
+
+

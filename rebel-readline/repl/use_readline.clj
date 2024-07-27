@@ -1,6 +1,14 @@
 (ns use-readline
   (:require rebel-readline.main
-            [rebel-readline.jline-api :as j]))
+            [clojure.reflect :as reflect :refer [reflect]]
+            [cljfmt.core :as fmt]
+            [rebel-readline.jline-api :as j])
+  (:import [org.jline.reader.impl DefaultParser]
+           [org.jline.reader.impl LineReaderImpl]
+           [org.jline.terminal Terminal]
+           [org.jline.terminal TerminalBuilder]
+           [org.jline.terminal.impl DumbTerminal]))
+
 ; https://www.infoworld.com/article/3697654/interactive-java-consoles-with-jline-and-consoleui.html?page=2
 ;; after this ctrl-d exits this line-reader
 (rebel-readline.main/-main)
@@ -17,3 +25,12 @@
 (let [p (proxy [org.jline.reader.impl.LineReaderImpl] [terminal, "p-proxy" {}]
                (readLine [] (str "tiny " (.getAppName this))))]
      (.readLine p))
+
+;; TODO: work on testing framework
+;; this works
+(binding [*in* (java.io.PushbackReader. (io/reader (.getBytes "hi")))]
+    (read *in*))
+
+#_ ;; but this does not
+(binding [*in* (java.io.PushbackReader. (io/reader (.getBytes "hello there")))]
+  (.readLine line-reader))

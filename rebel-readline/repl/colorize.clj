@@ -2,6 +2,10 @@
   (:require rebel-readline.main
             [rebel-readline.jline-api :as j]))
 
+;; colorizing specific
+;; puget
+;;  https://github.com/greglook/puget
+;; note that rebel-readline has its own tokenizer and colorizer
 
 ;; color fn e.g. (rebel-readline.tools/color  :font-lock/variable-name)
 rebel-readline.tools/colorize

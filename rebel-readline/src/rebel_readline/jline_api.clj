@@ -152,7 +152,7 @@ If you are using `lein` you may need to use `lein trampoline`."
 (defn orig-key-map-clone [key-map-name]
   (get (.defaultKeyMaps *line-reader*) key-map-name))
 
-(defn bind-key [key-map widget-id key-str]
+(defn bind-key [^KeyMap key-map widget-id key-str]
   (when key-str
     (.bind key-map (org.jline.reader.Reference. widget-id) key-str)))
 

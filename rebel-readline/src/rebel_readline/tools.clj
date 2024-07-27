@@ -168,9 +168,9 @@
    :widget/apropos-namespace (.faint (fg-color 243))
 
    :widget/warning           AttributedStyle/DEFAULT
-   :widget/error             (fg-color 196)
+   :widget/error             (fg-color 196)})
 
-   })
+
 
 (register-color-theme! :dark-screen-theme dark-screen-theme)
 

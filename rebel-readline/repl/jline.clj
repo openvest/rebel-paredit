@@ -1,7 +1,8 @@
- (ns jline
+(ns jline
   (:require [clojure.reflect :as reflect :refer [reflect]]
             [cljfmt.core :as fmt]
-            [rebel-readline.jline-api :as j])
+            [rebel-readline.jline-api :as j]
+            [clojure.pprint :refer [pprint]])
   (:import [org.jline.reader.impl DefaultParser]
            [org.jline.reader.impl LineReaderImpl]
            [org.jline.terminal Terminal]
@@ -86,6 +87,8 @@
           (print (Throwable->map e))
           (throw e))))))
 
+;; this is not the way to do this i.e. with self-insert
+;; should be done with key-binding -> widget
 (defn ov-create-line-reader [terminal app-name service]
   (let [service-variable-name (str ::service)]
     (proxy [LineReaderImpl clojure.lang.IDeref clojure.lang.IAtom]
@@ -139,6 +142,29 @@
          {:self-insert-hooks [ins-paren3 #(do (println ">>:" (str *buffer*)))]}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; this takes
+(let [in (io/input-stream (.getBytes "hi there"))
+      out System/out]
+  (-> (TerminalBuilder/builder)
+      (.system false)
+      (.streams in out)
+      (.build)))
+
+(let [sb (java.lang.StringBuffer.)
+      in (io/input-stream (.getBytes "hi there"))
+      out (proxy [java.io.OutputStream] []
+            (write [news] (.append sb (char news))))
+      fake-terminal (-> (TerminalBuilder/builder)
+                        (.system false)
+                        (.streams in out)
+                        (.build))
+      fake-line-reader (LineReaderImpl. fake-terminal)]
+  ;; why do i need this sleep? shouldn't the .flush above here work>
+  (Thread/sleep 100)
+  (.readLine fake-line-reader "go> "))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; autopairing
 (import '[org.jline.widget AutopairWidgets])
 
@@ -150,8 +176,12 @@
       pairs (.get field a)]
      (doto pairs
            (.remove "`")
-           (.remove "'")))
+           (.remove "'")
+           (.remove " ")))
 
 (.enable a)
 
 (.readLine line-reader ">>: ")
+
+(.enable (:autopair-widgets @rebel-readline.jline-api/*line-reader*))
+(.disable (:autopair-widgets @rebel-readline.jline-api/*line-reader*))
