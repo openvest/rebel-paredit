@@ -1,8 +1,8 @@
-(ns rewrite_clj
+(ns rewrite-clj
   (:require [rewrite-clj.parser :as p]
             [rewrite-clj.node :as n]
             [rewrite-clj.zip :as z]
-            [rewrite-clj.paredit :as paredit]
+            [rewrite-clj.paredit :as pe]
             [clojure.string :as str]
             [clojure.pprint :refer [pprint]]))
 
@@ -141,8 +141,16 @@
        (map vector (iterate inc 2))
        (into {1 0})))
 
+(defn row-offsets2
+  "for a string return a vector of row offsets"
+  [s]
+  (->> (str/split-lines s)
+       (map (comp inc count))
+       (reductions +)
+       (into [0])))
+
 (defn loc->position
-  "for a locator with positions show the position 
+  "for a locator with positions show the position
   with :cursor and :end-cursor added"
   [z]
   (let [row-offsets (row-offsets (str (z/node z)))
@@ -152,21 +160,29 @@
                        :end-cursor (+ -1 end-col (row-offsets end-row))))]
     (comp add-cursor meta z/node)))
 
+(defn cursor->position*
+  [s]
+  (let [row-offsets (row-offsets s)]
+    (fn get-pos [{:keys [row col end-row end-col] :as position}]
+      (assoc position
+        :cursor (+ -1 col (row-offsets row))
+        :end-cursor (+ -1 end-col (row-offsets end-row)))))
+  )
 (defn find-loc [loc target-cursor]
   (let [get-position (loc->position loc)]
     (loop [l loc]
-      (let [{:keys [cursor end-cursor] :as position}  (get-position l)]
-        ;(println position (z/node l))
+      (let [{:keys [cursor end-cursor] :as position} (get-position l)]
+        ;(println position (z/node l) (type l))
         (cond
           ;; we found it
           (= target-cursor cursor)
-          l 
+          l
 
           ;; look past this node (right not down)
           (>= target-cursor end-cursor)
           (if-let [right-sib (z/right* l)]
             (recur right-sib)
-            (assoc l :inner-cursor end-cursor) )
+            (assoc l :inner-cursor end-cursor))
 
           (= target-cursor (dec end-cursor))
           (if-let [inside (z/down* l)]
@@ -175,18 +191,58 @@
                 (z/rightmost*))
             (assoc l :inner-cursor (- target-cursor cursor)))
 
-          ;; decend into this node or return the fragment
+          ;; descend into this node or return the fragment
           (< target-cursor end-cursor)
           (if-let [inside (z/down* l)]
-            (recur (z/next* l))
+            (recur inside)
             (assoc l :inner-cursor (- target-cursor cursor))))))))
 
+(defn find-pos*
+  "given a string
+  returns a function of cursor->position"
+  [s]
+  (fn [target]
+    (loop [r 1 [row-offset & offsets] (row-offsets2 s)]
+      (if (> target (first offsets))
+        (recur (inc r) offsets)
+        (let [col (- (inc target) row-offset)]
+          {:row r :end-row r :col col :end-col (inc col)})))))
+
+(defn find-pos2*
+  "given a string
+  returns a function of cursor->position"
+  [s]
+  (fn [target]
+    (loop [offsets (rest (row-offsets2 s))
+           row 1
+           row-offset 0]
+      (let [next-offset (first offsets)]
+        (if (> target next-offset)
+          (recur (rest offsets) (inc row) next-offset)
+          (let [col (- (inc target) row-offset)]
+            {:row row :end-row row :col col :end-col (inc col)}))))))
+
+;; should this take a string (i.e. a buffer) rather than a loc
+(defn find-pos
+  "given locator and a cursor
+   returns the corresponding position"
+  [loc target-cursor]
+  ((find-pos* (z/root-string loc)) target-cursor))
+
+;; slower than find-loc
+(defn find-loc2
+  [loc target-cursor]
+  (->> (find-pos loc target-cursor)
+       (z/find-last-by-pos loc)))
+
 (str (z/node (find-loc z 20)))
+
+
 (comment
 
-(defn f[x y];
-0123456789111
-          012
-  (+ x 8));
-1111111222
-3456789012)
+  (defn f [x y]
+    0123456789111
+    012
+    (+ x 8))
+  1111111222
+  3456789012)
