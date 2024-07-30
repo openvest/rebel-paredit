@@ -131,7 +131,7 @@
      (take-while  (complement z/end?)))
 
 
-(defn row-offsets
+(defn row-offsets-map
   "for a string return a map of row-index->offset
   uses first-row-index=1"
   [s]
@@ -141,7 +141,7 @@
        (map vector (iterate inc 2))
        (into {1 0})))
 
-(defn row-offsets2
+(defn rowoffsets
   "for a string return a vector of row offsets"
   [s]
   (->> (str/split-lines s)
@@ -168,6 +168,7 @@
         :cursor (+ -1 col (row-offsets row))
         :end-cursor (+ -1 end-col (row-offsets end-row)))))
   )
+
 (defn find-loc [loc target-cursor]
   (let [get-position (loc->position loc)]
     (loop [l loc]
@@ -197,30 +198,32 @@
             (recur inside)
             (assoc l :inner-cursor (- target-cursor cursor))))))))
 
-(defn find-pos*
+(defn find-pos1*
   "given a string
   returns a function of cursor->position"
   [s]
   (fn [target]
-    (loop [r 1 [row-offset & offsets] (row-offsets2 s)]
-      (if (> target (first offsets))
+    (loop [r 1 [row-offset & offsets] (rowoffsets s)]
+      (if (>= target (first offsets))
         (recur (inc r) offsets)
         (let [col (- (inc target) row-offset)]
           {:row r :end-row r :col col :end-col (inc col)})))))
 
-(defn find-pos2*
+(defn find-pos*
   "given a string
   returns a function of cursor->position"
   [s]
-  (fn [target]
-    (loop [offsets (rest (row-offsets2 s))
-           row 1
-           row-offset 0]
-      (let [next-offset (first offsets)]
-        (if (> target next-offset)
-          (recur (rest offsets) (inc row) next-offset)
-          (let [col (- (inc target) row-offset)]
-            {:row row :end-row row :col col :end-col (inc col)}))))))
+  (let [offsets (rowoffsets s)]
+    (fn [target]
+      (loop [offsets (rest offsets)
+             row 1
+             row-offset 0]
+        (let [next-offset (first offsets)]
+          (if (and next-offset (>= target next-offset))
+            (recur (rest offsets) (inc row) next-offset)
+            ;; TODO: fix offsets running off the end
+            (let [col (- (inc target) row-offset)]
+              {:row row :end-row row :col col :end-col (inc col)})))))))
 
 ;; should this take a string (i.e. a buffer) rather than a loc
 (defn find-pos
@@ -240,9 +243,9 @@
 
 (comment
 
-  (defn f [x y]
-    0123456789111
-    012
-    (+ x 8))
-  1111111222
-  3456789012)
+(defn f [x y]
+01234567891111
+          0123
+  (+ x 8))
+1111111222
+4567890123)
