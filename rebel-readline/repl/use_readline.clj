@@ -22,6 +22,8 @@
 
 
 ;; proxy
+;; TODO: wish I could get this to work with a clojure line-reader
+;;       this does work. try to get this working for dev purposes
 (let [p (proxy [org.jline.reader.impl.LineReaderImpl] [terminal, "p-proxy" {}]
                (readLine [] (str "tiny " (.getAppName this))))]
      (.readLine p))

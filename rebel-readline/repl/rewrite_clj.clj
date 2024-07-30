@@ -22,7 +22,7 @@
 (require '[rewrite-clj.parser :as p]
          '[rewrite-clj.node :as n]
          '[rewrite-clj.zip :as z]
-         '[rewrite-clj.paredit :as paredit])
+         '[rewrite-clj.paredit :as pe])
 
 (def s "(defn f[x y]\n  (+ x 8))")
 (def p (p/parse-string s))
@@ -36,37 +36,38 @@
                     loc)))
     z/node
     str)
-#_=> {:row 1, :col 2, :end-row 1, :end-col 6} defn
-#_=> {:row 1, :col 7, :end-row 1, :end-col 8} f
-#_=> {:row 1, :col 9, :end-row 1, :end-col 10} x
-#_=> {:row 1, :col 11, :end-row 1, :end-col 12} y
-#_=> {:row 1, :col 8, :end-row 1, :end-col 13} [x y]
-#_=> {:row 2, :col 4, :end-row 2, :end-col 5} +
-#_=> {:row 2, :col 6, :end-row 2, :end-col 7} x
-#_=> {:row 2, :col 8, :end-row 2, :end-col 9} 8
-#_=> {:row 2, :col 3, :end-row 2, :end-col 10} (+ x 8)
-#_=> {:row 1, :col 1, :end-row 2, :end-col 11} (defn f [x y]
-                                                 (+ x 8))
+;; {:row 1, :col 2, :end-row 1, :end-col 6} defn
+;; {:row 1, :col 7, :end-row 1, :end-col 8} f
+;; {:row 1, :col 9, :end-row 1, :end-col 10} x
+;; {:row 1, :col 11, :end-row 1, :end-col 12} y
+;; {:row 1, :col 8, :end-row 1, :end-col 13} [x y]
+;; {:row 2, :col 4, :end-row 2, :end-col 5} +
+;; {:row 2, :col 6, :end-row 2, :end-col 7} x
+;; {:row 2, :col 8, :end-row 2, :end-col 9} 8
+;; {:row 2, :col 3, :end-row 2, :end-col 10} (+ x 8)
+;; {:row 1, :col 1, :end-row 2, :end-col 11} (defn f [x y]
+;;                                             (+ x 8))
+
 "(defn f[x y]\n  (+ x 8))"
 
 (-> z
     (z/prewalk (fn [loc]
                  (let [n (z/node loc)]
-                   (println "#_=> " (meta (z/node loc)) (str n))
+                   (println ";; " (meta (z/node loc)) (str n))
                    loc)))
     z/node
     str)
-#_=> {:row 1, :col 1, :end-row 2, :end-col 11} (defn f [x y]
-                                                 (+ x 8))
-#_=> {:row 1, :col 2, :end-row 1, :end-col 6} defn
-#_=> {:row 1, :col 7, :end-row 1, :end-col 8} f
-#_=> {:row 1, :col 8, :end-row 1, :end-col 13} [x y]
-#_=> {:row 1, :col 9, :end-row 1, :end-col 10} x
-#_=> {:row 1, :col 11, :end-row 1, :end-col 12} y
-#_=> {:row 2, :col 3, :end-row 2, :end-col 10} (+ x 8)
-#_=> {:row 2, :col 4, :end-row 2, :end-col 5} +
-#_=> {:row 2, :col 6, :end-row 2, :end-col 7} x
-#_=> {:row 2, :col 8, :end-row 2, :end-col 9} 8
+;; {:row 1, :col 1, :end-row 2, :end-col 11} (defn f [x y]
+;;                                             (+ x 8))
+;; {:row 1, :col 2, :end-row 1, :end-col 6} defn
+;; {:row 1, :col 7, :end-row 1, :end-col 8} f
+;; {:row 1, :col 8, :end-row 1, :end-col 13} [x y]
+;; {:row 1, :col 9, :end-row 1, :end-col 10} x
+;; {:row 1, :col 11, :end-row 1, :end-col 12} y
+;; {:row 2, :col 3, :end-row 2, :end-col 10} (+ x 8)
+;; {:row 2, :col 4, :end-row 2, :end-col 5} +
+;; {:row 2, :col 6, :end-row 2, :end-col 7} x
+;; {:row 2, :col 8, :end-row 2, :end-col 9} 8
 "(defn f[x y]\n  (+ x 8))"
 
 (defn walk [loc]
@@ -153,7 +154,7 @@
   "for a locator with positions show the position
   with :cursor and :end-cursor added"
   [z]
-  (let [row-offsets (row-offsets (str (z/node z)))
+  (let [row-offsets (rowoffsets (str (z/node z)))
         add-cursor (fn [{:keys [row col end-row end-col] :as position}]
                      (assoc position
                        :cursor (+ -1 col (row-offsets row))
@@ -162,7 +163,7 @@
 
 (defn cursor->position*
   [s]
-  (let [row-offsets (row-offsets s)]
+  (let [row-offsets (rowoffsets s)]
     (fn get-pos [{:keys [row col end-row end-col] :as position}]
       (assoc position
         :cursor (+ -1 col (row-offsets row))
@@ -243,9 +244,9 @@
 
 (comment
 
-(defn f [x y]
+(defn f [x y] "
 01234567891111
-          0123
-  (+ x 8))
+          0123"
+  (+ x 8)) "
 1111111222
-4567890123)
+4567890123")

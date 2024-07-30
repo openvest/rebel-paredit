@@ -14,7 +14,7 @@
 (swap! j/*line-reader* update ::j/key-bindings (constantly {:main [["C" "clojure-force-accept-line"]]}))
 (j/apply-key-bindings!)
 
-;; wierd and wonky but this rows too
+;; weird and wonky but this works too
 (swap! j/*line-reader* update-in [::j/key-bindings :emacs]
        #((fnil conj []) %1 (first %2))
        [(apply str (map char [24 24])) "beginning-of-buffer"])
@@ -33,8 +33,8 @@
        :emacs
        (map (fn [[k v]]
               (let [k (KeyMap/display k)]
-                [(subs k 1 (dec (count k))) v]))))
-  (pprint))
+                [(subs k 1 (dec (count k))) v])))
+       (pprint)))
 
 (->> @j/*line-reader*
      ::j/key-bindings

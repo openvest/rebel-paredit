@@ -1,7 +1,8 @@
 (ns rebel-readline.clojure.paredit-test
   (:require [rebel-readline.clojure.paredit :as SUT]
             [rewrite-clj.zip :as z]
-            [clojure.test :refer :all]))
+            [clojure.test :refer :all])
+  (:import [org.jline.reader.impl BufferImpl]))
 
 
 (def s1 "(defn f[x y]\n  (+ x 8))")
@@ -57,9 +58,11 @@
              z/node
              str))))
 
+;; kill tests
 
-
-
-
-
-
+;(doto (BufferImpl.) (.write s))
+(deftest kill-test
+  (let [buf (doto (BufferImpl.) (.write s1))]
+    (SUT/kill-at-cur buf 15)
+    (is (= "(defn f[x y]\n  )"
+           (str buf)))))

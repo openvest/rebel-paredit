@@ -1,5 +1,5 @@
 (ns rebel-readline.clojure.paredit
-  (:require [rewrite-clj.parser :as p]
+  (:require [rewrite-clj.paredit :as pe]
             [rewrite-clj.node :as n]
             [rewrite-clj.zip :as z]
             [clojure.string :as str]))
@@ -88,3 +88,22 @@
             (if-let [inside (z/down* l)]
               (recur inside)
               (assoc l :inner-cursor (- target-cursor cursor)))))))))
+;; killing
+(defn kill-at-cur
+  "For a Buffer, kill at a cursor position.
+  defaults to current cursor"
+  ([buf] (kill-at-cur buf (.cursor buf)))
+  ([buf cur]
+   (let [s   (str buf)
+         pos (str-find-pos s cur)
+         tail (-> s
+                  (z/of-string {:track-position? true})
+                  (pe/kill-at-pos pos)
+                  (z/root-string)
+                  (subs cur))]
+     (doto buf
+       (.cursor cur)
+       (.write tail)
+       (.delete (- (.length buf)
+                   (.cursor buf)))))))
+
