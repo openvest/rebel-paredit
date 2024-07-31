@@ -151,31 +151,33 @@
   [buf]
   (let [cur (.cursor buf)
         s (str buf)
+        old-tail-len (- (count s) cur)
         pos (str-find-pos s cur)
         new-s (-> s
                   (z/of-string {:track-position? true})
                   (z/find-last-by-pos pos)
                   (pe/slurp-backward)
                   (z/root-string))]
-    ;; TODO: reposition cursor
     (doto buf
       (.clear)
-      (.write new-s))))
+      (.write new-s)
+      (.cursor (- (count new-s) old-tail-len)))))
 
 (defn barf-backward
   "For a Buffer, barf backward"
   [buf]
   (let [cur (.cursor buf)
         s (str buf)
+        old-tail-len (- (count s) cur)
         pos (str-find-pos s cur)
         new-s (-> s
                   (z/of-string {:track-position? true})
                   (z/find-last-by-pos pos)
                   (pe/barf-backward)
                   (z/root-string))]
-    ;; TODO: reposition cursor
     (doto buf
       (.clear)
-      (.write new-s))))
+      (.write new-s)
+      (.cursor (- (count new-s) old-tail-len)))))
 
 

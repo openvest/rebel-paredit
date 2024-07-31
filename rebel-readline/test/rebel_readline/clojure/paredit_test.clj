@@ -69,26 +69,31 @@
            (str buf)))))
 
 (deftest slurp-forward-test
-  (let [buf (doto (BufferImpl.)
+  (let [cur 2
+        buf (doto (BufferImpl.)
               (.write "[[1 2] [3 4] 5]")
-              (.cursor 2))]
+              (.cursor cur))]
     (SUT/slurp-forward buf)
     (is (= "[[1 2 [3 4]] 5]"
-           (str buf)))))
+           (str buf)))
+    (is (= cur (.cursor buf)))))
 
 (deftest barf-forward-test
-  (let [buf (doto (BufferImpl.)
+  (let [cur 2
+        buf (doto (BufferImpl.)
               (.write "[[1 2 [3 4]] 5]")
-              (.cursor 2))]
+              (.cursor cur))]
     (SUT/barf-forward buf)
     (is (= "[[1 2] [3 4] 5]"
-           (str buf)))))
+           (str buf)))
+    (is (= cur (.cursor buf)))))
 
 (deftest slurp-backward-test
-  (let [buf (doto (BufferImpl.)
+  (let [cur 9
+        buf (doto (BufferImpl.)
               (.write "[[1 2] [3 4] 5]")
               ;;              =><=
-              (.cursor 9))]
+              (.cursor cur))]
     (SUT/slurp-backward buf)
     (is (= "[[[1 2] 3 4] 5]"
            (str buf)))))
