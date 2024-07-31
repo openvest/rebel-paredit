@@ -75,3 +75,11 @@
     (SUT/slurp-forward buf)
     (is (= "[[1 2 [3 4]] 5]"
            (str buf)))))
+
+(deftest barf-forward-test
+  (let [buf (doto (BufferImpl.)
+              (.write "[[1 2 [3 4]] 5]")
+              (.cursor 2))]
+    (SUT/barf-forward buf)
+    (is (= "[[1 2] [3 4] 5]"
+           (str buf)))))

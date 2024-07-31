@@ -129,3 +129,22 @@
       (.delete (- (.length buf)
                   (.cursor buf))))))
 
+(defn barf-forward
+  "For a Buffer, kill at a cursor position.
+  defaults to current cursor"
+  [buf]
+  (let [cur (.cursor buf)
+        s (str buf)
+        pos (str-find-pos s cur)
+        tail (-> s
+                 (z/of-string {:track-position? true})
+                 (z/find-last-by-pos pos)
+                 (pe/barf-forward)
+                 (z/root-string)
+                 (subs cur))]
+    (doto buf
+      (.cursor cur)
+      (.write tail)
+      (.delete (- (.length buf)
+                  (.cursor buf))))))
+
