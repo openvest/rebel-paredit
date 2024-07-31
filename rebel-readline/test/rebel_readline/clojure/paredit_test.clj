@@ -83,3 +83,21 @@
     (SUT/barf-forward buf)
     (is (= "[[1 2] [3 4] 5]"
            (str buf)))))
+
+(deftest slurp-backward-test
+  (let [buf (doto (BufferImpl.)
+              (.write "[[1 2] [3 4] 5]")
+              ;;              =><=
+              (.cursor 9))]
+    (SUT/slurp-backward buf)
+    (is (= "[[[1 2] 3 4] 5]"
+           (str buf)))))
+
+(deftest barf-backward-test
+  (let [buf (doto (BufferImpl.)
+              (.write "[[[1 2] 3 4] 5]")
+              ;;            =><=
+              (.cursor 7))]
+    (SUT/barf-backward buf)
+    (is (= "[[1 2] [3 4] 5]"
+           (str buf)))))
