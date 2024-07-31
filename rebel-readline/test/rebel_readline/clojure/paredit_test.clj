@@ -60,9 +60,18 @@
 
 ;; kill tests
 
-;(doto (BufferImpl.) (.write s))
 (deftest kill-test
-  (let [buf (doto (BufferImpl.) (.write s1))]
-    (SUT/kill-at-cur buf 15)
+  (let [buf (doto (BufferImpl.)
+              (.write s1)
+              (.cursor 15))]
+    (SUT/kill buf)
     (is (= "(defn f[x y]\n  )"
+           (str buf)))))
+
+(deftest slurp-forward-test
+  (let [buf (doto (BufferImpl.)
+              (.write "[[1 2] [3 4] 5]")
+              (.cursor 2))]
+    (SUT/slurp-forward buf)
+    (is (= "[[1 2 [3 4]] 5]"
            (str buf)))))

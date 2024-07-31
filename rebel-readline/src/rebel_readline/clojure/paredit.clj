@@ -89,21 +89,43 @@
               (recur inside)
               (assoc l :inner-cursor (- target-cursor cursor)))))))))
 ;; killing
-(defn kill-at-cur
+
+;; note that this kills more than one line
+;; which is different from other systems
+(defn kill
   "For a Buffer, kill at a cursor position.
   defaults to current cursor"
-  ([buf] (kill-at-cur buf (.cursor buf)))
-  ([buf cur]
-   (let [s   (str buf)
-         pos (str-find-pos s cur)
-         tail (-> s
-                  (z/of-string {:track-position? true})
-                  (pe/kill-at-pos pos)
-                  (z/root-string)
-                  (subs cur))]
-     (doto buf
-       (.cursor cur)
-       (.write tail)
-       (.delete (- (.length buf)
-                   (.cursor buf)))))))
+  [buf]
+  (let [s (str buf)
+        cur (.cursor buf)
+        pos (str-find-pos s cur)
+        tail (-> s
+                 (z/of-string {:track-position? true})
+                 (pe/kill-at-pos pos)                       ;kill-at-pos or kill-one-at-pos
+                 (z/root-string)
+                 (subs cur))]
+    (doto buf
+      (.cursor cur)
+      (.write tail)
+      (.delete (- (.length buf)
+                  (.cursor buf))))))
+
+(defn slurp-forward
+  "For a Buffer, kill at a cursor position.
+  defaults to current cursor"
+  [buf]
+  (let [cur (.cursor buf)
+        s (str buf)
+        pos (str-find-pos s cur)
+        tail (-> s
+                 (z/of-string {:track-position? true})
+                 (z/find-last-by-pos pos)
+                 (pe/slurp-forward)
+                 (z/root-string)
+                 (subs cur))]
+    (doto buf
+      (.cursor cur)
+      (.write tail)
+      (.delete (- (.length buf)
+                  (.cursor buf))))))
 
