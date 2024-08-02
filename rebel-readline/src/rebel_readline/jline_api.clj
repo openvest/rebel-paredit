@@ -96,6 +96,27 @@ If you are using `lein` you may need to use `lein trampoline`."
                    (doto field
                      (.setAccessible true)))))))
 
+(defn invoke-private-method
+  "invoke a private method of an object"
+  [obj fn-name & args]
+  (let [m (->> (.. obj getClass getDeclaredMethods)
+               (filter (fn [x] (.. x getName (equals fn-name))))
+               (filter (fn [x] (= (count args) (.getParameterCount x))))
+               first)
+        m-args (into-array Object args)]
+    (.setAccessible m true)
+    (.invoke m obj m-args)))
+
+;; seems to work OK
+(defn get-private-field
+  "access private field of an object"
+  [obj fn-name]
+  (let [f (->> (.. obj getClass getDeclaredFields)
+               (filter (fn [x] (.. x getName (equals fn-name))))
+               first)]
+    (.setAccessible f true)
+    (.get f obj)))
+
 (defn supplier [f]
   (proxy [java.util.function.Supplier] []
     (get [] (f))))

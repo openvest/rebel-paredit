@@ -487,11 +487,13 @@
   (let [autopair (AutopairWidgets. line-reader true)
         ;; this wants to autopair ' and ` which is not cool for clojure
         ;; lets remove them from the widget/paris  (hard because pairs map is not public)
-        field (-> AutopairWidgets
-                  (.getDeclaredField "pairs")
-                  (doto (.setAccessible true)))
-        pairs (.get field autopair)]
+        pairs (api/get-private-field autopair "pairs")
+        ]
     (swap! line-reader assoc :autopair-widgets autopair)
+    ;; default behavior it to now autopar a lot of stuff but in lispy languages this is a problem
+    (.put (get-private-field autopair "LBOUNDS") "all", "")
+    (.put (get-private-field autopair "RBOUNDS") "all", "")
+    ;; we added curly brackes with the arg above bot clojure should not autopari ' or`
     (doto pairs
       (.remove "'")
       (.remove "`")
