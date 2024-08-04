@@ -99,20 +99,23 @@
   "For a Buffer, kill at a cursor position."
   ([] (kill j/*buffer*))
   ([buf]
-   (let [s (str buf)
-         cur (.cursor buf)
-         pos (str-find-pos s cur)
-         tail (-> s
-                  (z/of-string {:track-position? true})
-                  (pe/kill-at-pos pos)                      ;kill-at-pos or kill-one-at-pos
-                  (z/root-string)
-                  (subs cur))]
-     (doto buf
-       (.cursor cur)
-       (.write tail)
-       (.delete (- (.length buf)
-                   (.cursor buf)))
-       (.cursor cur)))))
+   (if (#{\) \} \] \"} (char (.nextChar buf)))
+     ; if we currently end on a closing bracket or quote, do nothing
+     buf
+     (let [s (str buf)
+           cur (.cursor buf)
+           pos (str-find-pos s cur)
+           tail (-> s
+                    (z/of-string {:track-position? true})
+                    (pe/kill-at-pos pos)                    ;kill-at-pos or kill-one-at-pos
+                    (z/root-string)
+                    (subs cur))]
+       (doto buf
+         (.cursor cur)
+         (.write tail)
+         (.delete (- (.length buf)
+                     (.cursor buf)))
+         (.cursor cur))))))
 
 (defn slurp-forward
   "For a Buffer, slurp forward"

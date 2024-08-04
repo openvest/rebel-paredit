@@ -68,6 +68,16 @@
     (is (= "(defn f[x y]\n  )"
            (str buf)))))
 
+(deftest kill-end-test
+  "if we end on a closing bracket do nothing"
+  (let [buf (doto (BufferImpl.)
+              (.write "(foo (bar))")
+              ;       "0123456789"
+              (.cursor 9))]
+    (SUT/kill buf)
+    (is (= "(foo (bar))"
+           (str buf)))))
+
 (deftest slurp-forward-test
   (let [cur 2
         buf (doto (BufferImpl.)
