@@ -860,14 +860,15 @@
 (defn bind-paredit-widgets [km-name]
   (doto km-name
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
-    ;; TODO which of these works for slurp forward?
+    ;; in linux use "sudo showkey -s" to experiment
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \F)) "paredit-slurp-forward") ;works
     (key-binding (str (KeyMap/translate "^[[1;5C")) "paredit-slurp-forward") ; windows ctrl-right-arrow
     (key-binding (str (KeyMap/translate "^[[1;5D")) "paredit-barf-forward") ; windows ctrl-left-arrow
-    ;(key-binding (str (KeyMap/translate "[[C")) "paredit-slurp-forward") ;; no luck
+    (key-binding (str (KeyMap/translate "^[[1;7D")) "paredit-slurp-backward") ; windows alt-ctrl-left-arrow
+    (key-binding (str (KeyMap/translate "^[[1;7C")) "paredit-barf-backward") ; windows alt-ctrl-right-arrow
+    ;(key-binding (str (KeyMap/translate "[[C")) "paredit-slurp-forward") ;; no luck.  for a different terminal?
     ;(key-binding (str (KeyMap/key api/*terminal* InfoCmp$Capability/key_right)) "paredit-slurp-forward") ;; windows is right arrow (no alt or ctrl)
     ;(key-binding (str (KeyMap/ctrl (char 0x4D))) "paredit-slurp-forward") ; ctrl-right-arrow
-    ;(key-binding (str (KeyMap/ctrl (char 0x4B))) "paredit-barf-forward")  ; ctrl-left-arrow
     ))
 
 
