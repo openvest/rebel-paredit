@@ -490,6 +490,26 @@
     (paredit/kill)
     true))
 
+(def paredit-slurp-forward
+  (create-widget
+    (paredit/slurp-forward)
+    true))
+
+(def paredit-slurp-backward
+  (create-widget
+    (paredit/slurp-backward)
+    true))
+
+(def paredit-barf-forward
+  (create-widget
+    (paredit/barf-forward)
+    true))
+
+(def paredit-barf-backward
+  (create-widget
+    (paredit/barf-backward)
+    true))
+
 ;why doesn't this work in add-all-widgets?
 (defn autopair-widget
   "create AutopairWidgets on the currently bound *line-reader*"
@@ -817,7 +837,11 @@
     (register-widget "end-of-buffer"              end-of-buffer)
     (register-widget "beginning-of-buffer"        beginning-of-buffer)
 
-    (register-widget "paredit-kill"               paredit-kill)))
+    (register-widget "paredit-kill"               paredit-kill)
+    (register-widget "paredit-slurp-forward"      paredit-slurp-forward)
+    (register-widget "paredit-slurp-backward"     paredit-slurp-backward)
+    (register-widget "paredit-barf-forward"       paredit-barf-forward)
+    (register-widget "paredit-barf-backward"      paredit-barf-backward)))
 
 (defn bind-indents [km-name]
   (doto km-name
@@ -835,7 +859,17 @@
 
 (defn bind-paredit-widgets [km-name]
   (doto km-name
-    (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")))
+    (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
+    ;; TODO which of these works for slurp forward?
+    (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \F)) "paredit-slurp-forward") ;works
+    (key-binding (str (KeyMap/translate "^[[1;5C")) "paredit-slurp-forward") ; windows ctrl-right-arrow
+    (key-binding (str (KeyMap/translate "^[[1;5D")) "paredit-barf-forward") ; windows ctrl-left-arrow
+    ;(key-binding (str (KeyMap/translate "[[C")) "paredit-slurp-forward") ;; no luck
+    ;(key-binding (str (KeyMap/key api/*terminal* InfoCmp$Capability/key_right)) "paredit-slurp-forward") ;; windows is right arrow (no alt or ctrl)
+    ;(key-binding (str (KeyMap/ctrl (char 0x4D))) "paredit-slurp-forward") ; ctrl-right-arrow
+    ;(key-binding (str (KeyMap/ctrl (char 0x4B))) "paredit-barf-forward")  ; ctrl-left-arrow
+    ))
+
 
 (defn bind-clojure-widgets-vi-cmd [km-name]
   (doto km-name

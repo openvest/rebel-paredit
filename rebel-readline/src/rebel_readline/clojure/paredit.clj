@@ -119,72 +119,76 @@
 
 (defn slurp-forward
   "For a Buffer, slurp forward"
-  [buf]
-  (let [cur (.cursor buf)
-        s (str buf)
-        pos (str-find-pos s cur)
-        tail (-> s
-                 (z/of-string {:track-position? true})
-                 (z/find-last-by-pos pos)
-                 (pe/slurp-forward)
-                 (z/root-string)
-                 (subs cur))]
-    (doto buf
-      (.write tail)
-      (.delete (- (.length buf)
-                  (.cursor buf)))
-      (.cursor cur))))
+  ([] (slurp-forward j/*buffer*))
+  ([buf]
+   (let [cur (.cursor buf)
+         s (str buf)
+         pos (str-find-pos s cur)
+         tail (-> s
+                  (z/of-string {:track-position? true})
+                  (z/find-last-by-pos pos)
+                  (pe/slurp-forward)
+                  (z/root-string)
+                  (subs cur))]
+     (doto buf
+       (.write tail)
+       (.delete (- (.length buf)
+                   (.cursor buf)))
+       (.cursor cur)))))
 
 (defn barf-forward
   "For a Buffer, barf forward"
-  [buf]
-  (let [cur (.cursor buf)
-        s (str buf)
-        pos (str-find-pos s cur)
-        tail (-> s
-                 (z/of-string {:track-position? true})
-                 (z/find-last-by-pos pos)
-                 (pe/barf-forward)
-                 (z/root-string)
-                 (subs cur))]
-    (doto buf
-      (.write tail)
-      (.delete (- (.length buf)
-                  (.cursor buf)))
-      (.cursor cur))))
+  ([] (barf-forward j/*buffer*))
+  ([buf]
+   (let [cur (.cursor buf)
+         s (str buf)
+         pos (str-find-pos s cur)
+         tail (-> s
+                  (z/of-string {:track-position? true})
+                  (z/find-last-by-pos pos)
+                  (pe/barf-forward)
+                  (z/root-string)
+                  (subs cur))]
+     (doto buf
+       (.write tail)
+       (.delete (- (.length buf)
+                   (.cursor buf)))
+       (.cursor cur)))))
 
 (defn slurp-backward
   "For a Buffer, slurp backward"
-  [buf]
-  (let [cur (.cursor buf)
-        s (str buf)
-        old-tail-len (- (count s) cur)
-        pos (str-find-pos s cur)
-        new-s (-> s
-                  (z/of-string {:track-position? true})
-                  (z/find-last-by-pos pos)
-                  (pe/slurp-backward)
-                  (z/root-string))]
-    (doto buf
-      (.clear)
-      (.write new-s)
-      (.cursor (- (count new-s) old-tail-len)))))
+  ([] (slurp-backward j/*buffer*))
+  ([buf]
+   (let [cur (.cursor buf)
+         s (str buf)
+         old-tail-len (- (count s) cur)
+         pos (str-find-pos s cur)
+         new-s (-> s
+                   (z/of-string {:track-position? true})
+                   (z/find-last-by-pos pos)
+                   (pe/slurp-backward)
+                   (z/root-string))]
+     (doto buf
+       (.clear)
+       (.write new-s)
+       (.cursor (- (count new-s) old-tail-len))))))
 
 (defn barf-backward
   "For a Buffer, barf backward"
-  [buf]
-  (let [cur (.cursor buf)
-        s (str buf)
-        old-tail-len (- (count s) cur)
-        pos (str-find-pos s cur)
-        new-s (-> s
-                  (z/of-string {:track-position? true})
-                  (z/find-last-by-pos pos)
-                  (pe/barf-backward)
-                  (z/root-string))]
-    (doto buf
-      (.clear)
-      (.write new-s)
-      (.cursor (- (count new-s) old-tail-len)))))
+  ([] (barf-backward j/*buffer*))
+  ([buf]
+   (let [cur (.cursor buf)
+         s (str buf)
+         old-tail-len (- (count s) cur)
+         pos (str-find-pos s cur)
+         new-s (-> s
+                   (z/of-string {:track-position? true})
+                   (z/find-last-by-pos pos)
+                   (pe/barf-backward)
+                   (z/root-string))]
+     (doto buf
+       (.clear)
+       (.write new-s)
+       (.cursor (- (count new-s) old-tail-len))))))
 
 
