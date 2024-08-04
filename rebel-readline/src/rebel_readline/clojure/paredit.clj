@@ -1,5 +1,6 @@
 (ns rebel-readline.clojure.paredit
-  (:require [rewrite-clj.paredit :as pe]
+  (:require [rebel-readline.jline-api :as j]
+            [rewrite-clj.paredit :as pe]
             [rewrite-clj.node :as n]
             [rewrite-clj.zip :as z]
             [clojure.string :as str]))
@@ -88,27 +89,30 @@
             (if-let [inside (z/down* l)]
               (recur inside)
               (assoc l :inner-cursor (- target-cursor cursor)))))))))
+
+;; buffer based functions
 ;; killing
 
 ;; note that this kills more than one line
 ;; which is different from other systems
 (defn kill
-  "For a Buffer, kill at a cursor position.
-  defaults to current cursor"
-  [buf]
-  (let [s (str buf)
-        cur (.cursor buf)
-        pos (str-find-pos s cur)
-        tail (-> s
-                 (z/of-string {:track-position? true})
-                 (pe/kill-at-pos pos)                       ;kill-at-pos or kill-one-at-pos
-                 (z/root-string)
-                 (subs cur))]
-    (doto buf
-      (.cursor cur)
-      (.write tail)
-      (.delete (- (.length buf)
-                  (.cursor buf))))))
+  "For a Buffer, kill at a cursor position."
+  ([] (kill j/*buffer*))
+  ([buf]
+   (let [s (str buf)
+         cur (.cursor buf)
+         pos (str-find-pos s cur)
+         tail (-> s
+                  (z/of-string {:track-position? true})
+                  (pe/kill-at-pos pos)                      ;kill-at-pos or kill-one-at-pos
+                  (z/root-string)
+                  (subs cur))]
+     (doto buf
+       (.cursor cur)
+       (.write tail)
+       (.delete (- (.length buf)
+                   (.cursor buf)))
+       (.cursor cur)))))
 
 (defn slurp-forward
   "For a Buffer, slurp forward"

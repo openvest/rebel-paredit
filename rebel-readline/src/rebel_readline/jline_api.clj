@@ -96,6 +96,7 @@ If you are using `lein` you may need to use `lein trampoline`."
                    (doto field
                      (.setAccessible true)))))))
 
+;; TODO: add ability to check Superclass (as is get-accessible-field) and better error reporting
 (defn invoke-private-method
   "invoke a private method of an object"
   [obj fn-name & args]

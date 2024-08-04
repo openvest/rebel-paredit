@@ -5,6 +5,7 @@
    [rebel-readline.jline-api.attributed-string :as astring]
    [rebel-readline.clojure.tokenizer :as tokenize]
    [rebel-readline.clojure.sexp :as sexp]
+   [rebel-readline.clojure.paredit :as paredit]
    [rebel-readline.tools :as tools :refer [color service-dispatch]]
    [rebel-readline.utils :as utils :refer [log]]
    ;; lazy-load
@@ -480,6 +481,15 @@
    ;; return true to re-render
    true))
 
+;; -----------------------------------------
+;; paredit widgets
+;; -----------------------------------------
+
+(def paredit-kill
+  (create-widget
+    (paredit/kill)
+    true))
+
 ;why doesn't this work in add-all-widgets?
 (defn autopair-widget
   "create AutopairWidgets on the currently bound *line-reader*"
@@ -805,7 +815,9 @@
     (register-widget "clojure-force-accept-line"  always-accept-line)
 
     (register-widget "end-of-buffer"              end-of-buffer)
-    (register-widget "beginning-of-buffer"        beginning-of-buffer)))
+    (register-widget "beginning-of-buffer"        beginning-of-buffer)
+
+    (register-widget "paredit-kill"               paredit-kill)))
 
 (defn bind-indents [km-name]
   (doto km-name
@@ -821,6 +833,10 @@
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \E)) "clojure-eval-at-point")
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \M)) "clojure-force-accept-line")))
 
+(defn bind-paredit-widgets [km-name]
+  (doto km-name
+    (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")))
+
 (defn bind-clojure-widgets-vi-cmd [km-name]
   (doto km-name
     (key-binding (str \\ \d) "clojure-doc-at-point")
@@ -832,6 +848,7 @@
   (doto km-name
     bind-indents
     bind-clojure-widgets
+    bind-paredit-widgets
     (key-binding
      (KeyMap/key
       (.getTerminal *line-reader*)
