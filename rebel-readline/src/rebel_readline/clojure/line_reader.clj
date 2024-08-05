@@ -510,6 +510,11 @@
     (paredit/barf-backward)
     true))
 
+(def paredit-open-and-slurp
+  (create-widget
+    (paredit/open-and-slurp)
+    true))
+
 ;why doesn't this work in add-all-widgets?
 (defn autopair-widget
   "create AutopairWidgets on the currently bound *line-reader*"
@@ -841,7 +846,8 @@
     (register-widget "paredit-slurp-forward"      paredit-slurp-forward)
     (register-widget "paredit-slurp-backward"     paredit-slurp-backward)
     (register-widget "paredit-barf-forward"       paredit-barf-forward)
-    (register-widget "paredit-barf-backward"      paredit-barf-backward)))
+    (register-widget "paredit-barf-backward"      paredit-barf-backward)
+    (register-widget "paredit-open-and-slurp"     paredit-open-and-slurp)))
 
 (defn bind-indents [km-name]
   (doto km-name
@@ -860,6 +866,7 @@
 (defn bind-paredit-widgets [km-name]
   (doto km-name
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
+    (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp")
     ;; in linux use "sudo showkey -s" to experiment
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \F)) "paredit-slurp-forward") ;works
     (key-binding (str (KeyMap/translate "^[[1;5C")) "paredit-slurp-forward") ; windows ctrl-right-arrow

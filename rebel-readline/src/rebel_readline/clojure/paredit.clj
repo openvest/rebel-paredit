@@ -191,4 +191,17 @@
        (.write new-s)
        (.cursor (- (count new-s) old-tail-len))))))
 
+(defn open-and-slurp
+  "insert open paren and slurp forward"
+  ([] (open-and-slurp j/*buffer*))
+  ([buf]
+   (doto buf
+     (.write "()")
+     (.move -1))
+   (slurp-forward buf)
+   ;; should this be part of slurp
+   #_(when (#{\(\[\{} (.currChar buf))
+     (doto buf
+       (.write " ")
+       (.move -1)))))
 
