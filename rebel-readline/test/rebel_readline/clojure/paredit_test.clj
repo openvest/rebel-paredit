@@ -131,11 +131,20 @@
     (is (= "[[1 2] [3 4] 5]"
            (str buf)))))
 
-(deftest split
+(deftest splice-test
   (let [buf (doto (BufferImpl.)
-              (.write "[[1 2] 3]]")
+              (.write "[[1 2] 3]")
               ;;         =><=
               (.cursor 4))]
-    ;(SUT/split buf)
+    (SUT/splice buf)
+    (is (= "[1 2 3]"
+           (str buf)))))
+
+(deftest splice-at-tail-test
+  (let [buf (doto (BufferImpl.)
+              (.write "[[1 2] 3]")
+              ;;          =><=
+              (.cursor 5))]
+    (SUT/splice buf)
     (is (= "[1 2 3]"
            (str buf)))))

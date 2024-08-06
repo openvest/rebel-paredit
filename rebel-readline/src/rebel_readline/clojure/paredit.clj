@@ -210,3 +210,24 @@
        (.write " ")
        (.move -1)))))
 
+(defn splice
+  "splice the list/vect"
+  ([] (splice j/*buffer*))
+  ([buf]
+   (let [cur (.cursor buf)
+         s   (str buf)
+         pos (str-find-pos s cur)
+         new-s (-> s
+                   (z/of-string {:track-position? true})
+                   (z/find-last-by-pos pos)
+                   ((fn [loc]
+                      (if (#{\}\)\]} (char (.currChar buf)))
+                        loc
+                        (z/up loc))))
+                   (pe/splice)
+                   (z/root-string))]
+     (doto buf
+       (.clear)
+       (.write new-s)
+       (.cursor cur)))))
+
