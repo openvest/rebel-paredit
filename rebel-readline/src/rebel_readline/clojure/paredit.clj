@@ -121,6 +121,10 @@
   "For a Buffer, slurp forward"
   ([] (slurp-forward j/*buffer*))
   ([buf]
+   (when (#{\]\)\}} (char(.currChar buf)))
+     (doto buf
+       (.write " ")
+       (.move -1)))
    (let [cur (.cursor buf)
          s (str buf)
          pos (str-find-pos s cur)
@@ -199,6 +203,7 @@
      (.write "()")
      (.move -1))
    (slurp-forward buf)
+   (.delete buf 1)
    ;; should this be part of slurp
    #_(when (#{\(\[\{} (.currChar buf))
      (doto buf

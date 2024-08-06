@@ -82,6 +82,20 @@
   (let [cur 2
         buf (doto (BufferImpl.)
               (.write "[[1 2] [3 4] 5]")
+              ;       "012
+              (.cursor cur))]
+    (SUT/slurp-forward buf)
+    (is (= "[[1 2 [3 4]] 5]"
+           (str buf)))
+    (is (= cur (.cursor buf)))))
+
+(deftest slurp-forward-tail-test
+  "slurp forward when at the end of a list type node
+   (i.e. no locator there)"
+  (let [cur 5
+        buf (doto (BufferImpl.)
+              (.write "[[1 2] [3 4] 5]")
+              ;        012345
               (.cursor cur))]
     (SUT/slurp-forward buf)
     (is (= "[[1 2 [3 4]] 5]"
@@ -115,4 +129,13 @@
               (.cursor 7))]
     (SUT/barf-backward buf)
     (is (= "[[1 2] [3 4] 5]"
+           (str buf)))))
+
+(deftest split
+  (let [buf (doto (BufferImpl.)
+              (.write "[[1 2] 3]]")
+              ;;         =><=
+              (.cursor 4))]
+    ;(SUT/split buf)
+    (is (= "[1 2 3]"
            (str buf)))))
