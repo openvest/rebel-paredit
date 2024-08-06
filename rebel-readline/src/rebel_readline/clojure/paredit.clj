@@ -231,3 +231,19 @@
        (.write new-s)
        (.cursor cur)))))
 
+(defn split
+  "split the list/vect"
+  ([] (split j/*buffer*))
+  ([buf]
+   (let [cur (.cursor buf)
+         s   (str buf)
+         pos (str-find-pos s cur)
+         new-s (-> s
+                   (z/of-string {:track-position? true})
+                   (z/find-last-by-pos pos)
+                   (pe/split-at-pos pos)
+                   (z/root-string))]
+     (doto buf
+       (.clear)
+       (.write new-s)
+       (.cursor cur)))))

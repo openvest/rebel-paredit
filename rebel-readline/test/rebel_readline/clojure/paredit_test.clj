@@ -148,3 +148,32 @@
     (SUT/splice buf)
     (is (= "[1 2 3]"
            (str buf)))))
+
+(deftest split-ok-test
+  (let [buf (doto (BufferImpl.)
+              (.write "[[1 2] 3]")
+              ;;        =><=
+              (.cursor 3))]
+    (SUT/split buf)
+    (is (= "[[1] [2] 3]"
+           (str buf)))))
+
+(deftest ^:pending split-not-ok-test
+  "this looks nearly identical to the above test
+  it is still before the (node-2) but it fails"
+  (let [buf (doto (BufferImpl.)
+              (.write "[[1 2] 3]")
+              ;;         =><=
+              (.cursor 4))]
+    (SUT/split buf)
+    (is (= "[[1] [2] 3]"
+           (str buf)))))
+
+(deftest split-at-string-test
+  (let [buf (doto (BufferImpl.)
+              (.write "[[1 \"some-long-string\"] 3]")
+              ;;                =><=
+              (.cursor 10))]
+    (SUT/split buf)
+    (is (= "[[1 \"some-\" \"long-string\"] 3]"
+           (str buf)))))

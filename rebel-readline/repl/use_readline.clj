@@ -36,6 +36,40 @@
 #_ ;; but this does not
 (binding [*in* (java.io.PushbackReader. (io/reader (.getBytes "hello there")))]
   (.readLine line-reader))
+;;;;;;;;;;;;;;;;;;;;;Widget copy functions
+(defmacro create-widget [& body]
+  `(fn [line-reader#]
+     (reify Widget
+       (apply [_#]
+         (widget-exec line-reader# (fn [] ~@body))))))
+
+(defn register-widget [widget-id widget]
+  (doto *line-reader*
+    (-> (.getWidgets)
+        (.put widget-id (if (fn? widget) (widget *line-reader*) widget)))))
+
+
+(defn widget-exec
+"used inside create-widget macro"
+[line-reader thunk]
+
+  (binding [*line-reader* line-reader
+            *buffer* (.getBuffer line-reader)]
+    (try
+      (thunk)
+      (catch clojure.lang.ExceptionInfo e
+        (if-let [message (.getMessage e)]
+          (do (log :widget-execution-error (Throwable->map e))
+              (display-message
+               (AttributedString.
+                message (.foreground AttributedStyle/DEFAULT AttributedStyle/RED)))
+              true)
+          (throw e))))))
+
+(defn call-widget [widget-name]
+  (.callWidget *line-reader* widget-name))
+;;;;;;;;;;;;;;;;;;;;;Widget copy functions
+
 
 
 (def ap (:autopair-widgets @line-reader))
@@ -51,27 +85,11 @@
 
   (def lr (LineReaderImpl. j/*terminal*))
   (def ap (proxy [AutopairWidgets] [lr true]
-            )))
+            ))
 
-;; can't get this to work
-;; works for 0 arity methods only
-;; works: (invoke-private-method "SomeLongStringToSubsequence" "subSequence" (int 4) (int 14))
-;; works: (invoke-private-method "someThing" "equalsIgnoreCase" "Something")
-(defn invoke-private-method
-  [obj fn-name & args]
-  (let [m (->> (.. obj getClass getDeclaredMethods)
-               (filter (fn [x] (.. x getName (equals fn-name))))
-               (filter (fn [x] (= (count args) (.getParameterCount x))))
-               first)
-        m-args (into-array Object args)]
-    (.setAccessible m true)
-    (.invoke m obj m-args)))
-
-;; seems to work OK
-(defn get-private-field
-  [obj fn-name]
-  (let [f (->> (.. obj getClass getDeclaredFields)
-               (filter (fn [x] (.. x getName (equals fn-name))))
-               first)]
-    (.setAccessible f true)
-    (.get f obj)))
+  ;; can't get .invoke to work
+  ;; works for 0 arity methods only
+  ;; works: (invoke-private-method "SomeLongStringToSubsequence" "subSequence" (int 4) (int 14))
+  ;; works: (invoke-private-method "someThing" "equalsIgnoreCase" "Something")
+  ;; see j/invoke-private-method and j/get-private-field
+  )

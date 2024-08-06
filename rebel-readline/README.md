@@ -1,8 +1,10 @@
 # rebel-readline
 
+<!---
 [![Clojars Project](https://img.shields.io/clojars/v/com.bhauman/rebel-readline.svg)](https://clojars.org)
-[![Clojars Project](https://img.shields.io/clojars/v/com.bhauman/rebel-readline-cljs.svg)](https://clojars.org/com.bhauman/rebel-readline-cljs)
 
+[![Clojars Project](https://img.shields.io/clojars/v/com.bhauman/rebel-readline-cljs.svg)](https://clojars.org/com.bhauman/rebel-readline-cljs)
+--->
 A terminal readline library for Clojure Dialects
 
 [![asciicast](https://asciinema.org/a/160597.png)](https://asciinema.org/a/160597)
@@ -104,12 +106,6 @@ Alternatively, you can do this globally in `$HOME/.lein/profiles.clj`:
 ```
 
 Now you can start a rebel-readline REPL with `lein rebl`.
-
-#### Boot
-
-```
-boot -d com.bhauman/rebel-readline call -f rebel-readline.main/-main
-```
 
 #### Clone repo
 
@@ -337,7 +333,7 @@ out to me on the clojurians slack channel.
 
 ## License
 
-Copyright © 2018 Bruce Hauman
+Copyright © 2024 Philip Cooper
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

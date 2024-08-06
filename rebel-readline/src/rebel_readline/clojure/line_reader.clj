@@ -520,6 +520,11 @@
     (paredit/splice)
     true))
 
+(def paredit-split
+  (create-widget
+    (paredit/split)
+    true))
+
 ;why doesn't this work in add-all-widgets?
 (defn autopair-widget
   "create AutopairWidgets on the currently bound *line-reader*"
@@ -853,7 +858,8 @@
     (register-widget "paredit-barf-forward"       paredit-barf-forward)
     (register-widget "paredit-barf-backward"      paredit-barf-backward)
     (register-widget "paredit-open-and-slurp"     paredit-open-and-slurp)
-    (register-widget "paredit-splice"             paredit-splice)))
+    (register-widget "paredit-splice"             paredit-splice)
+    (register-widget "paredit-split"              paredit-split)))
 
 (defn bind-indents [km-name]
   (doto km-name
@@ -874,6 +880,7 @@
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
     (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp")
     (key-binding (str (KeyMap/alt \s)) "paredit-splice")
+    (key-binding (str (KeyMap/alt \S)) "paredit-split")
     ;; in linux use "sudo showkey -s" to experiment
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \F)) "paredit-slurp-forward") ;works
     (key-binding (str (KeyMap/translate "^[[1;5C")) "paredit-slurp-forward") ; windows ctrl-right-arrow
