@@ -3,6 +3,7 @@
             [rewrite-clj.paredit :as pe]
             [rewrite-clj.node :as n]
             [rewrite-clj.zip :as z]
+            [rewrite-clj.custom-zipper.utils :as rczu]
             [clojure.string :as str]))
 
 ;; string based functions
@@ -96,10 +97,51 @@
 ;; note that this kills more than one line
 ;; which is different from other systems
 (defn kill
-  "For a Buffer, kill at a cursor position."
   ([] (kill j/*buffer*))
   ([buf]
-   (if (#{\) \} \] \"} (char (.nextChar buf)))
+   (let [s (str buf)
+         cur (.cursor buf)
+         cur-pos (str-find-pos s cur)
+         cur-beg-col (:col cur-pos)
+         cur-beg-row (:row cur-pos)
+         loc (-> s
+                 (z/of-string {:track-position? true})
+                 (z/find-last-by-pos cur-pos))
+         remove? (fn [loc]
+                   (-> loc z/node meta :row (= cur-beg-row)))
+         new-s (cond
+                 ;; remove a newline
+                 (-> loc z/node n/tag #{:newline})
+                 (-> loc z/remove z/root-string)            ;; remove additional whitespace or reformat?
+                 ;; truncate a token and remove until end of line
+                 (-> loc z/node n/tag #{:token :list :vector})
+                 (let [node-beg-col (-> loc z/node meta :col)]
+                   (if (= node-beg-col cur-beg-col)
+                     (-> (z/remove* loc)
+                         (rczu/remove-right-while remove?)
+                         (z/root-string))
+                     (-> loc
+                         (z/edit (comp symbol
+                                       #(subs % 0 (- cur-beg-col node-beg-col))
+                                       str))
+                         (rczu/remove-right-while remove?)
+                         (z/root-string))))
+
+                 :default #_(-> loc z/node n/tag #{:token})
+                 (z/root-string loc))]
+     (doto buf
+       (.cursor cur)
+       (.write (subs new-s cur))
+       (.delete (- (.length buf)
+                   (.cursor buf)))
+       (.cursor cur)))))
+
+
+(defn kill0
+  "For a Buffer, kill at a cursor position."
+  ([] (kill0 j/*buffer*))
+  ([buf]
+   (if (#{\) \} \] \"} (char (.nextChar buf)))              ;; add (char 0) ??
      ; if we currently end on a closing bracket or quote, do nothing
      buf
      (let [s (str buf)

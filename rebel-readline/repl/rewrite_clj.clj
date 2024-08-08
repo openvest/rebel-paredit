@@ -3,6 +3,7 @@
             [rewrite-clj.node :as n]
             [rewrite-clj.zip :as z]
             [rewrite-clj.paredit :as pe]
+            [rewrite-clj.custom-zipper.utils :as rczu]
             [clojure.string :as str]
             [clojure.pprint :refer [pprint]]))
 
@@ -32,7 +33,7 @@
 (-> z
     (z/postwalk (fn [loc]
                   (let [n (z/node loc)]
-                    (println "#_=> " (meta (z/node loc)) (str n))
+                    (println "" (meta (z/node loc)) (str n))
                     loc)))
     z/node
     str)
@@ -236,10 +237,61 @@
 ;; slower than find-loc
 (defn find-loc2
   [loc target-cursor]
-  (->> (find-pos loc target-cursor)
+  (->> (find-pos loc
+                 target-cursor)
        (z/find-last-by-pos loc)))
 
 (str (z/node (find-loc z 20)))
+
+;;; example of editing a token node
+(-> "(def-let [x 3]
+      (inc x))"
+    (z/of-string {:track-position? true})
+    (z/find-last-by-pos pos)
+    ;(#'paredit/kill-at-pos pos)
+    (z/edit (comp symbol #(subs % 4) str))
+    z/node
+    n/tag)
+
+(defn kill
+  ([] (kill j/*buffer*))
+  ([buf]
+   (let [s (str buf)
+         cur (.cursor buf)
+         cur-pos (pe/str-find-pos s cur)
+         cur-beg-col (:col cur-pos)
+         cur-beg-row (:row cur-pos)
+         loc (-> s
+                 (z/of-string {:track-position? true})
+                 (z/find-last-by-pos cur-pos))
+         remove? (fn [loc]
+                   (-> loc z/node meta :row (= cur-beg-row)))]
+     (cond
+       ;; remove a newline
+       (-> loc z/node n/tag #{:newline})
+       (-> loc z/remove z/root-string)                      ;; remove additional whitespace or reformat?
+       ;; truncate a token and remove until end of line
+       (-> loc z/node n/tag #{:token})
+       (let [node-beg-col (-> loc z/node meta :col)]
+         (if (= node-beg-col cur-beg-col)
+           (-> (z/remove* loc)
+               (rczu/remove-right-while remove?)
+               (z/root-string))
+           (-> loc
+               (z/edit (comp symbol
+                             #(subs % 0 (- cur-beg-col node-beg-col))
+                             str))
+               (rczu/remove-right-while remove?)
+               (z/root-string))))
+
+       (-> loc z/node n/tag #{:token})
+       :not-a-token))))
+
+;; count the size of the tail that matches
+(->> (map reverse ["xyzabc" "xabc"])
+     (apply map vector)
+     (take-while (partial apply =))
+     count)
 
 
 (comment

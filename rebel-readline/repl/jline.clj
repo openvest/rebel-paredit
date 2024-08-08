@@ -185,3 +185,10 @@
 
 (.enable (:autopair-widgets @rebel-readline.jline-api/*line-reader*))
 (.disable (:autopair-widgets @rebel-readline.jline-api/*line-reader*))
+
+;;;;;;;;;;;;;;;;;;;;;;; killRing
+(def kr
+  (.get (j/get-accessible-field j/*line-reader* "killRing") j/*line-reader*))
+(seq (j/get-private-field kr "slots"))
+
+

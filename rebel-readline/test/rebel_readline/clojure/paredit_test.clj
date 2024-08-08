@@ -62,7 +62,7 @@
 
 (deftest kill-test
   (let [buf (doto (BufferImpl.)
-              (.write s1)
+              (.write "(defn f[x y]\n  (+ x 8))")
               (.cursor 15))]
     (SUT/kill buf)
     (is (= "(defn f[x y]\n  )"
@@ -76,6 +76,26 @@
               (.cursor 9))]
     (SUT/kill buf)
     (is (= "(foo (bar))"
+           (str buf)))))
+
+(deftest ^:wip kill-require-test
+  "wierd case of error inside a require"
+  (let [buf (doto (BufferImpl.)
+              (.write "(require '[rewrite-clj.paredit :as paredit])")
+              ;       "0123456789A"
+              (.cursor 10))]
+    (SUT/kill buf)
+    (is (= "(require )"
+           (str buf)))))
+
+(deftest ^:wip kill-sym-test
+  "wierd case of error inside a sym"
+  (let [buf (doto (BufferImpl.)
+              (.write "(foo my-symbol)")
+              ;       "0123456789A"
+              (.cursor 8))]
+    (SUT/kill buf)
+    (is (= "(foo my-)"
            (str buf)))))
 
 (deftest slurp-forward-test
@@ -158,7 +178,7 @@
     (is (= "[[1] [2] 3]"
            (str buf)))))
 
-(deftest ^:pending split-not-ok-test
+(deftest ^:wip split-not-ok-test
   "this looks nearly identical to the above test
   it is still before the (node-2) but it fails"
   (let [buf (doto (BufferImpl.)
@@ -177,3 +197,17 @@
     (SUT/split buf)
     (is (= "[[1 \"some-\" \"long-string\"] 3]"
            (str buf)))))
+
+(comment
+  ;all cursor positions
+  (pprint (let [buf (doto (BufferImpl.)
+                      (.write "[[1 2] 3]"))
+                s (str buf)]
+            (for [cur (range (inc (count s)))]
+              [cur (str (doto buf
+                          (.clear)
+                          (.write s)
+                          (.cursor cur)
+                          (.write "|")))])))
+
+  )
