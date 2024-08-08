@@ -7,20 +7,21 @@
   (:import [org.jline.reader.impl BufferImpl]))
 
 
-;;;;;;;;;0123456789111 111111122222
-;;;;;;;;;          012 345678901234
-
-(defmacro with-buffer [s & body]
-        `(let [cur# (or (str/index-of ~s "|")
-                        (throw (ex-info "(with-buffer s ...) missing a | to indicate cursor" {:s ~s})))
-               s# (str (subs ~s 0 cur#)(subs ~s (inc cur#)))
-               buf# (doto (BufferImpl.)
-                      (.write s#)
-                      (.cursor cur#))]
-           (binding [j/*buffer* buf#]
-             ~@body)))
+(defmacro with-buffer
+  "macro to run the body with jline-api/*buffer* bound to a buffer with the provided string
+  Ths string must include a | to indicate the cursor position"
+  [s & body]
+  `(let [cur# (or (str/index-of ~s "|")
+                  (throw (ex-info "(with-buffer s ...) missing a | to indicate cursor" {:s ~s})))
+         s# (str (subs ~s 0 cur#) (subs ~s (inc cur#)))
+         buf# (doto (BufferImpl.)
+                (.write s#)
+                (.cursor cur#))]
+     (binding [j/*buffer* buf#]
+       ~@body)))
 
 (defn display-buffer [buf]
+  "takes a buffer and returns the string with a | where the cursor is"
   (let [s (str buf)]
     (str (subs s 0 (.cursor buf)) "|"  (subs s (.cursor buf)))))
 
@@ -80,7 +81,7 @@
 
 (deftest kill-test
   (with-buffer
-           "(defn f[x y]\n  |(+ x 8))"
+    #_>>>> "(defn f[x y]\n  |(+ x 8))"
     (is (= "(defn f[x y]\n  |)"
            (-> (SUT/kill)
                (display-buffer))))))
@@ -111,28 +112,28 @@
 
 (deftest barf-forward-test
   (with-buffer
-           "[[1 2| [3 4]] 5]"
+    #_>>>> "[[1 2| [3 4]] 5]"
     (is (= "[[1 2|] [3 4] 5]"
            (-> (SUT/barf-forward)
                (display-buffer))))))
 
 (deftest slurp-backward-test
   (with-buffer
-           "[[1 2] [|3 4] 5]"
+    #_>>>> "[[1 2] [|3 4] 5]"
     (is (= "[[[1 2] |3 4] 5]"
            (-> (SUT/slurp-backward)
                (display-buffer))))))
 
 (deftest barf-backward-test
   (with-buffer
-           "[[[1 2]| 3 4] 5]"
+    #_>>>> "[[[1 2]| 3 4] 5]"
     (is (= "[[1 2] |[3 4] 5]"
            (-> (SUT/barf-backward)
                (display-buffer))))))
 
 (deftest splice-test
   (with-buffer
-           "[[1 2|] 3]"
+    #_>>>> "[[1 2|] 3]"
     (is (= "[1 2 |3]"
            (-> (SUT/splice)
                (display-buffer))))))
