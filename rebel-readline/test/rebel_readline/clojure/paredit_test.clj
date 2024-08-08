@@ -1,6 +1,8 @@
 (ns rebel-readline.clojure.paredit-test
   (:require [rebel-readline.clojure.paredit :as SUT]
+            [rebel-readline.jline-api :as j]
             [rewrite-clj.zip :as z]
+            [clojure.string :as str]
             [clojure.test :refer :all])
   (:import [org.jline.reader.impl BufferImpl]))
 
@@ -85,6 +87,7 @@
                (display-buffer))))))
 
 (deftest kill-end-test
+  ;; FIXME: this breaks the paren balance
   "if we end on a closing bracket do nothing"
   (with-buffer
     #_>>>> "(foo (bar|))"
@@ -94,23 +97,19 @@
 
 (deftest ^:wip kill-require-test
   "wierd case of error inside a require"
-  (let [buf (doto (BufferImpl.)
-              (.write "(require '[rewrite-clj.paredit :as paredit])")
-              ;       "0123456789A"
-              (.cursor 10))]
-    (SUT/kill buf)
-    (is (= "(require )"
-           (str buf)))))
+  (with-buffer
+    #_>>>> "(require '|[rewrite-clj.paredit :as paredit])"
+    (is (= "(require '|)"
+           (-> (SUT/kill)
+               (display-buffer))))))
 
-(deftest ^:wip kill-sym-test
-  "wierd case of error inside a sym"
-  (let [buf (doto (BufferImpl.)
-              (.write "(foo my-symbol)")
-              ;       "0123456789A"
-              (.cursor 8))]
-    (SUT/kill buf)
-    (is (= "(foo my-)"
-           (str buf)))))
+(deftest kill-sym-test
+  "kill inside a sym"
+  (with-buffer
+    #_>>>> "(foo my-|symbol)"
+    (is (= "(foo my-|)"
+           (-> (SUT/kill)
+               (display-buffer))))))
 
 (deftest slurp-forward-test
   (with-buffer
@@ -191,14 +190,14 @@
 
 (comment
   ;all cursor positions
-  (pprint (let [buf (doto (BufferImpl.)
-                      (.write "[[1 2] 3]"))
-                s (str buf)]
-            (for [cur (range (inc (count s)))]
-              [cur (str (doto buf
-                          (.clear)
-                          (.write s)
-                          (.cursor cur)
-                          (.write "|")))])))
+  (let [buf (doto (BufferImpl.)
+              (.write "[[1 2] 3]"))
+        s (str buf)]
+    (for [cur (range (inc (count s)))]
+      (str (doto buf
+             (.clear)
+             (.write s)
+             (.cursor cur)
+             (.write "|")))))
 
   )
