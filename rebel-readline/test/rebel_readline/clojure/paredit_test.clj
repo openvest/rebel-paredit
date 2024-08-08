@@ -5,11 +5,27 @@
   (:import [org.jline.reader.impl BufferImpl]))
 
 
-(def s1 "(defn f[x y]\n  (+ x 8))")
-;;;;;;;;;0123456789111 111111122222
-;;;;;;;;;          012 345678901234
+(defmacro with-buffer
+  "macro to run the body with jline-api/*buffer* bound to a buffer with the provided string
+  Ths string must include a | to indicate the cursor position"
+  [s & body]
+  `(let [cur# (or (str/index-of ~s "|")
+                  (throw (ex-info "(with-buffer s ...) missing a | to indicate cursor" {:s ~s})))
+         s# (str (subs ~s 0 cur#) (subs ~s (inc cur#)))
+         buf# (doto (BufferImpl.)
+                (.write s#)
+                (.cursor cur#))]
+     (binding [j/*buffer* buf#]
+       ~@body)))
+
+(defn display-buffer [buf]
+  "takes a buffer and returns the string with a | where the cursor is"
+  (let [s (str buf)]
+    (str (subs s 0 (.cursor buf)) "|"  (subs s (.cursor buf)))))
 
 ;;;; String Only Tests
+(def s1 "(defn f[x y]\n  (+ x 8))")
+
 (deftest string-row-offsets-test-s1
   (is (= [0 13 24]
          (SUT/str-row-offsets s1))))
@@ -58,25 +74,23 @@
              z/node
              str))))
 
+;;;; Buffer Tests
 ;; kill tests
 
 (deftest kill-test
-  (let [buf (doto (BufferImpl.)
-              (.write "(defn f[x y]\n  (+ x 8))")
-              (.cursor 15))]
-    (SUT/kill buf)
-    (is (= "(defn f[x y]\n  )"
-           (str buf)))))
+  (with-buffer
+    #_>>>> "(defn f[x y]\n  |(+ x 8))"
+    (is (= "(defn f[x y]\n  |)"
+           (-> (SUT/kill)
+               (display-buffer))))))
 
 (deftest kill-end-test
   "if we end on a closing bracket do nothing"
-  (let [buf (doto (BufferImpl.)
-              (.write "(foo (bar))")
-              ;       "0123456789"
-              (.cursor 9))]
-    (SUT/kill buf)
-    (is (= "(foo (bar))"
-           (str buf)))))
+  (with-buffer
+    #_>>>> "(foo (bar|))"
+    (is (= "(foo (bar|))"
+           (-> (SUT/kill)
+               (display-buffer))))))
 
 (deftest ^:wip kill-require-test
   "wierd case of error inside a require"
@@ -99,104 +113,81 @@
            (str buf)))))
 
 (deftest slurp-forward-test
-  (let [cur 2
-        buf (doto (BufferImpl.)
-              (.write "[[1 2] [3 4] 5]")
-              ;       "012
-              (.cursor cur))]
-    (SUT/slurp-forward buf)
-    (is (= "[[1 2 [3 4]] 5]"
-           (str buf)))
-    (is (= cur (.cursor buf)))))
+  (with-buffer
+    #_>>>> "[[1 |2] [3 4] 5]"
+    (is (= "[[1 |2 [3 4]] 5]"
+           (-> (SUT/slurp-forward)
+               (display-buffer))))))
 
 (deftest slurp-forward-tail-test
   "slurp forward when at the end of a list type node
    (i.e. no locator there)"
-  (let [cur 5
-        buf (doto (BufferImpl.)
-              (.write "[[1 2] [3 4] 5]")
-              ;        012345
-              (.cursor cur))]
-    (SUT/slurp-forward buf)
-    (is (= "[[1 2 [3 4]] 5]"
-           (str buf)))
-    (is (= cur (.cursor buf)))))
+  (with-buffer
+      #_>>>> "[[1 2|] [3 4] 5]"
+      (is (= "[[1 2| [3 4]] 5]"
+             (-> (SUT/slurp-forward)
+                 (display-buffer))))))
 
 (deftest barf-forward-test
-  (let [cur 2
-        buf (doto (BufferImpl.)
-              (.write "[[1 2 [3 4]] 5]")
-              (.cursor cur))]
-    (SUT/barf-forward buf)
-    (is (= "[[1 2] [3 4] 5]"
-           (str buf)))
-    (is (= cur (.cursor buf)))))
+  (with-buffer
+    #_>>>> "[[1 2| [3 4]] 5]"
+    (is (= "[[1 2|] [3 4] 5]"
+           (-> (SUT/barf-forward)
+               (display-buffer))))))
 
 (deftest slurp-backward-test
-  (let [cur 9
-        buf (doto (BufferImpl.)
-              (.write "[[1 2] [3 4] 5]")
-              ;;              =><=
-              (.cursor cur))]
-    (SUT/slurp-backward buf)
-    (is (= "[[[1 2] 3 4] 5]"
-           (str buf)))))
+  (with-buffer
+    #_>>>> "[[1 2] [|3 4] 5]"
+    (is (= "[[[1 2] |3 4] 5]"
+           (-> (SUT/slurp-backward)
+               (display-buffer))))))
 
 (deftest barf-backward-test
-  (let [buf (doto (BufferImpl.)
-              (.write "[[[1 2] 3 4] 5]")
-              ;;            =><=
-              (.cursor 7))]
-    (SUT/barf-backward buf)
-    (is (= "[[1 2] [3 4] 5]"
-           (str buf)))))
+  (with-buffer
+    #_>>>> "[[[1 2]| 3 4] 5]"
+    (is (= "[[1 2] |[3 4] 5]"
+           (-> (SUT/barf-backward)
+               (display-buffer))))))
 
 (deftest splice-test
-  (let [buf (doto (BufferImpl.)
-              (.write "[[1 2] 3]")
-              ;;         =><=
-              (.cursor 4))]
-    (SUT/splice buf)
-    (is (= "[1 2 3]"
-           (str buf)))))
+  (with-buffer
+    #_>>>> "[[1 2|] 3]"
+    (is (= "[1 2 |3]"
+           (-> (SUT/splice)
+               (display-buffer))))))
 
 (deftest splice-at-tail-test
-  (let [buf (doto (BufferImpl.)
-              (.write "[[1 2] 3]")
-              ;;          =><=
-              (.cursor 5))]
-    (SUT/splice buf)
-    (is (= "[1 2 3]"
-           (str buf)))))
+  (with-buffer
+    #_>>>> "[[1 2|] 3]"
+    (is (= "[1 2 |3]"
+           (-> (SUT/splice)
+               (display-buffer))))))
 
-(deftest split-ok-test
-  (let [buf (doto (BufferImpl.)
-              (.write "[[1 2] 3]")
-              ;;        =><=
-              (.cursor 3))]
-    (SUT/split buf)
-    (is (= "[[1] [2] 3]"
-           (str buf)))))
+(deftest ^:wip split-test
+  ;; split happens but cursor is misplaced
+  (with-buffer
+    #_>>>> "[[1| 2] 3]"
+    (is (= "[[1]| [2] 3]"
+           (-> (SUT/split)
+               (display-buffer))))))
 
 (deftest ^:wip split-not-ok-test
+  ;; split happens but cursor is misplaced
   "this looks nearly identical to the above test
   it is still before the (node-2) but it fails"
-  (let [buf (doto (BufferImpl.)
-              (.write "[[1 2] 3]")
-              ;;         =><=
-              (.cursor 4))]
-    (SUT/split buf)
-    (is (= "[[1] [2] 3]"
-           (str buf)))))
+  (with-buffer
+    #_>>>> "[[1 |2] 3]"
+    (is (= "[[1]| [2] 3]"
+           (-> (SUT/split)
+               (display-buffer))))))
 
-(deftest split-at-string-test
-  (let [buf (doto (BufferImpl.)
-              (.write "[[1 \"some-long-string\"] 3]")
-              ;;                =><=
-              (.cursor 10))]
-    (SUT/split buf)
-    (is (= "[[1 \"some-\" \"long-string\"] 3]"
-           (str buf)))))
+(deftest ^:wip split-at-string-test
+  ;; split happens but cursor is misplaced
+  (with-buffer
+    #_>>>> "[[1 \"some-|long-string\"] 3]"
+    (is (= "[[1 \"some-\"| \"long-string\"] 3]"
+           (-> (SUT/split)
+               (display-buffer))))))
 
 (comment
   ;all cursor positions
