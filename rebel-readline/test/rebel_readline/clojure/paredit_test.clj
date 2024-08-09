@@ -6,7 +6,11 @@
             [clojure.test :refer :all])
   (:import [org.jline.reader.impl BufferImpl]))
 
+;; items marked ^:wip are work in progress where non error returns are produced
+;; with errors in cursor placement or whitespace
+;; we may decide to handle some of that with rewrite-clj to do some reformatting
 
+;; some helper functions/macros
 (defmacro with-buffer
   "macro to run the body with jline-api/*buffer* bound to a buffer with the provided string
   Ths string must include a | to indicate the cursor position"
@@ -86,6 +90,23 @@
            (-> (SUT/kill)
                (display-buffer))))))
 
+(deftest kill-one-line-test
+  "kill should kill upto but NOT including the <newline>"
+  (with-buffer
+    #_>>>> "(defn f|[x y]\n  (if x\n    (+ x 8)\n    (+ y 3)))"
+    (is (= "(defn f|\n  (if x\n    (+ x 8)\n    (+ y 3)))"
+           (-> (SUT/kill)
+               (display-buffer))))))
+
+(deftest ^:wip kill-at-line-end-test
+  ;; split happens but cursor is misplaced
+  "kill with cursor placed at the end of the line"
+  (with-buffer
+    #_>>>> "(defn f[x y]|\n  (+ x 8))"
+    (is (= "(defn f[x y]| (+ x 8))"
+           (-> (SUT/kill)
+               (display-buffer))))))
+
 (deftest kill-end-test
   ;; FIXME: this breaks the paren balance
   "if we end on a closing bracket do nothing"
@@ -95,11 +116,28 @@
            (-> (SUT/kill)
                (display-buffer))))))
 
-(deftest ^:wip kill-require-test
+(deftest kill-require-test
   "wierd case of error inside a require"
+  ;; TODO: should we be removing the quote here?
   (with-buffer
     #_>>>> "(require '|[rewrite-clj.paredit :as paredit])"
-    (is (= "(require '|)"
+    (is (= "(require |)"
+           (-> (SUT/kill)
+               (display-buffer))))))
+
+(deftest kill-at-whitespace-test
+  "kill at whitespace node"
+  (with-buffer
+    #_>>>> "[1 2|   3]"
+    (is (= "[1 2|]"
+           (-> (SUT/kill)
+               (display-buffer))))))
+
+(deftest kill-inside-whitespace-test
+  "kill inside a whitespace node"
+  (with-buffer
+    #_>>>> "[1 2  |   3]"
+    (is (= "[1 2  |]"
            (-> (SUT/kill)
                (display-buffer))))))
 
@@ -154,6 +192,15 @@
     (is (= "[1 2 |3]"
            (-> (SUT/splice)
                (display-buffer))))))
+
+(deftest ^:wip splice-cursor-test
+  ;; splice happens but cursor is misplaced
+  (with-buffer
+    #_>>>> "[1 2 [3 |4 5]]"
+    (is (= "[1 2 3 |4 5]"
+           (-> (rebel-readline.clojure.paredit/splice)
+               display-buffer)))))
+
 
 (deftest splice-at-tail-test
   (with-buffer

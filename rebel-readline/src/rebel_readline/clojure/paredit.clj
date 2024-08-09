@@ -96,10 +96,19 @@
 
 ;; note that this kills more than one line
 ;; which is different from other systems
+;; TODO: kill should operate on strings and not buffers so we can use the line-reader kill ring
 (defn kill
-  ([] (kill j/*buffer*))
-  ([buf]
-   (let [s (str buf)
+  []
+  ;; special case, killing after the quote we need to backspace to remove the quote
+  ;; quote nodes can't not have 1 child
+  ;; should we add it back in at the end?
+  (when (-> j/*buffer* (.prevChar) char #{\`\'})
+    (.backspace j/*buffer*))
+  (if (#{\) \} \] \"} (char (.nextChar j/*buffer*)))              ;; add (char 0) ??
+    ; if we currently end on a closing bracket or quote, do nothing
+    j/*buffer*
+   (let [buf j/*buffer*
+         s (str buf)
          cur (.cursor buf)
          cur-pos (str-find-pos s cur)
          cur-beg-col (:col cur-pos)
@@ -108,8 +117,10 @@
                  (z/of-string {:track-position? true})
                  (z/find-last-by-pos cur-pos))
          remove? (fn [loc]
-                   (-> loc z/node meta :row (= cur-beg-row)))
-         new-s (cond
+                   (let [n (-> loc z/node)]
+                     (and (not= :newline (n/tag n))
+                          (-> loc z/node meta :row (= cur-beg-row)))))
+         new-s (cond                                        ;; should this be a multifun
                  ;; remove a newline
                  (-> loc z/node n/tag #{:newline})
                  (-> loc z/remove z/root-string)            ;; remove additional whitespace or reformat?
@@ -126,6 +137,17 @@
                                        str))
                          (rczu/remove-right-while remove?)
                          (z/root-string))))
+                 ;; truncate a whitespace node and remove until end of line
+                 (-> loc z/node n/tag #{:whitespace})
+                 (let [node-beg-col (-> loc z/node meta :col)]
+                   (if (= node-beg-col cur-beg-col)
+                     (-> (z/remove* loc)
+                         (rczu/remove-right-while remove?)
+                         (z/root-string))
+                     (-> loc
+                         (z/replace (n/spaces (- cur-beg-col node-beg-col)))
+                         (rczu/remove-right-while remove?)
+                         (z/root-string))))
 
                  :default #_(-> loc z/node n/tag #{:token})
                  (z/root-string loc))]
@@ -137,9 +159,9 @@
        (.cursor cur)))))
 
 
-(defn kill0
+(defn kill-all
   "For a Buffer, kill at a cursor position."
-  ([] (kill0 j/*buffer*))
+  ([] (kill-all j/*buffer*))
   ([buf]
    (if (#{\) \} \] \"} (char (.nextChar buf)))              ;; add (char 0) ??
      ; if we currently end on a closing bracket or quote, do nothing
