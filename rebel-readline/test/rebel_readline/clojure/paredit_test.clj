@@ -1,10 +1,12 @@
 (ns rebel-readline.clojure.paredit-test
   (:require [rebel-readline.clojure.paredit :as SUT]
             [rebel-readline.jline-api :as j]
+            [rebel-readline.core]
             [rewrite-clj.zip :as z]
             [clojure.string :as str]
             [clojure.test :refer :all])
-  (:import [org.jline.reader.impl BufferImpl]))
+  (:import [org.jline.reader.impl LineReaderImpl BufferImpl]
+           [org.jline.terminal TerminalBuilder]))
 
 ;; items marked ^:wip are work in progress where non error returns are produced
 ;; with errors in cursor placement or whitespace
@@ -25,10 +27,15 @@
   `(let [cur# (or (str/index-of ~s "|")
                   (throw (ex-info "(with-buffer s ...) missing a | to indicate cursor" {:s ~s})))
          s# (str (subs ~s 0 cur#) (subs ~s (inc cur#)))
-         buf# (doto (BufferImpl.)
+         buffer# (doto (BufferImpl.)
                 (.write s#)
-                (.cursor cur#))]
-     (binding [j/*buffer* buf#]
+                (.cursor cur#))
+         #_#_line-reader# (rebel-readline.core/ensure-terminal (proxy [LineReaderImpl]
+                              [j/*terminal*
+                               "Test Readline"
+                               (java.util.HashMap. {::j/service (atom {})})]))]
+     (binding [j/*buffer* buffer#
+               #_#_j/*line-reader* line-reader#]
        ~@body)))
 
 (defn display-buffer [buf]
@@ -90,6 +97,13 @@
 ;;;; Buffer Tests
 ;; kill tests
 
+(deftest kill-foo-test
+  (let [[beg-str beg-cur] (str-cur "(|foo bar)")
+        [new-str new-cur] (str-cur "(|)")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
 (deftest kill-test
   (let [[beg-str beg-cur] (str-cur "(defn f[x y]\n  |(+ x 8))")
         [new-str new-cur] (str-cur "(defn f[x y]\n  |)")
@@ -109,6 +123,14 @@
   "kill with cursor placed at the end of the line"
   (let [[beg-str beg-cur] (str-cur "(defn f[x y]|\n  (+ x 8))")
         [new-str new-cur] (str-cur "(defn f[x y]|  (+ x 8))")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
+(deftest kill-at-buffer-end-test
+  "kill with cursor placed at the end of the buffer"
+  (let [[beg-str beg-cur] (str-cur "(foo bar)|")
+        [new-str new-cur] (str-cur "(foo bar)|")
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
@@ -147,7 +169,8 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
-(deftest kill-require-in-buf-test
+; TODO: this test requires a killRing inside a line-reader.  Can't (yet) create this in testing
+#_(deftest ^:wip kill-require-in-buf-test
   "wierd case of error inside a require"
   (with-buffer
     #_>>>> "(require '|[rewrite-clj.paredit :as paredit])"

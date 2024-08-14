@@ -100,7 +100,8 @@
   ;; quote nodes can't NOT have 1 child
   (cond
     ; if we currently end on a closing bracket or quote, do nothing
-    (#{\) \} \] \"} (.charAt s (inc c)))
+    (or (= c (count s))
+        (#{\) \} \] \"} (.charAt s (inc c))))
     [s c 0]
     ; if we currently at a line ending, remove it
     (#{\newline} (.charAt s c))
