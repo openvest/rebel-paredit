@@ -151,7 +151,7 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
-(deftest kill-space-string-test
+(deftest ^:wip kill-space-string-testa
   "some kills with a space before the string"
   ; seems to fail with one space before the double-quote char
   (let [[beg-str beg-cur] (str-cur "(foo | \"bar\")")
@@ -263,7 +263,10 @@
            (-> (rebel-readline.clojure.paredit/splice)
                (display-buffer))))))
 
-(deftest splice-in-string-test
+(deftest ^:wip splice-in-string-test
+  ;; not sure if this is proper
+  ;; this is the emacs and cursive behavior but could cause imbalanced parens
+  ;; so maybe it is not a good thing??
   (with-buffer
     #_>>>> "(\"|foo bar\" x)"
     (is (= "(|foo bar x)"

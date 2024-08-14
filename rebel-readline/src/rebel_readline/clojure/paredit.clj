@@ -127,25 +127,27 @@
                   (-> loc z/node n/tag #{:token :list :vector})
                   (let [node-beg-col (-> loc z/node meta :col)]
                     (if (= node-beg-col cur-beg-col)
-                      (-> (z/remove* loc)
+                      (-> loc
                           (rczu/remove-right-while remove?)
+                          (z/remove*)
                           (z/root-string))
                       (-> loc
+                          (rczu/remove-right-while remove?)
                           (z/edit (comp symbol
                                         #(subs % 0 (- cur-beg-col node-beg-col))
                                         str))
-                          (rczu/remove-right-while remove?)
                           (z/root-string))))
                   ;; truncate a whitespace node and remove until end of line
                   (-> loc z/node n/tag #{:whitespace})
                   (let [node-beg-col (-> loc z/node meta :col)]
                     (if (= node-beg-col cur-beg-col)
-                      (-> (z/remove* loc)
+                      (-> loc
                           (rczu/remove-right-while remove?)
+                          (z/remove)
                           (z/root-string))
                       (-> loc
-                          (z/replace (n/spaces (- cur-beg-col node-beg-col)))
                           (rczu/remove-right-while remove?)
+                          (z/replace (n/spaces (- cur-beg-col node-beg-col)))
                           (z/root-string))))
 
                   :default #_(-> loc z/node n/tag #{:token})
@@ -158,7 +160,8 @@
         c (.cursor j/*buffer*)
         [new-s new-c cut-len] (kill s c)
         kill-str (subs s c (+ c cut-len))]
-    (j/add-to-killRing kill-str)
+    (when (not-empty kill-str)  #_ (re-find #"[^\s]" kill-str) ;;  exclude all whitespace from killRing?
+      (j/add-to-killRing kill-str))
     (.delete j/*buffer* cut-len)))
 
 (defn kill-all
