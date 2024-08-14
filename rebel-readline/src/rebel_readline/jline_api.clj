@@ -89,12 +89,12 @@ If you are using `lein` you may need to use `lein trampoline`."
 ;; very naive
 (def get-accessible-field
   (memoize (fn [obj field-name]
-             (or (when-let [field (-> obj
-                                      .getClass
-                                      .getSuperclass
-                                      (.getDeclaredField field-name))]
-                   (doto field
-                     (.setAccessible true)))))))
+             (when-let [field (-> obj
+                                  .getClass
+                                  .getSuperclass
+                                  (.getDeclaredField field-name))]
+               (doto field
+                 (.setAccessible true))))))
 
 ;; TODO: add ability to check Superclass (as is get-accessible-field) and better error reporting
 (defn invoke-private-method
@@ -112,9 +112,7 @@ If you are using `lein` you may need to use `lein trampoline`."
 (defn get-private-field
   "access private field of an object"
   [obj fn-name]
-  (let [f (->> (.. obj getClass getDeclaredFields)
-               (filter (fn [x] (.. x getName (equals fn-name))))
-               first)]
+  (let [f (.. obj getClass (getDeclaredField fn-name))]
     (.setAccessible f true)
     (.get f obj)))
 
@@ -255,6 +253,28 @@ If you are using `lein` you may need to use `lein trampoline`."
 
 (defn next-char []
   (char (.nextChar *buffer*)))
+
+;; --------------------------------------
+;; KillRing operations
+;; --------------------------------------
+
+(defn add-to-killRing
+  [s]
+  (-> (get-accessible-field *line-reader* "killRing")
+      (.get *line-reader*)
+      (.add s)))
+
+(defn yank-from-killRing
+  []
+  (-> (get-accessible-field *line-reader* "killRing")
+      (.get *line-reader*)
+      (.yank)))
+
+(defn yankPop-from-killRing
+  []
+  (-> (get-accessible-field *line-reader* "killRing")
+      (.get *line-reader*)
+      (.yankPop)))
 
 
 ;; --------------------------------------

@@ -188,7 +188,21 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;; killRing
 (def kr
-  (.get (j/get-accessible-field j/*line-reader* "killRing") j/*line-reader*))
+  (-> (j/get-accessible-field j/*line-reader* "killRing")
+      (.get j/*line-reader*)
+      (j/get-private-field "slots")
+      seq))
 (seq (j/get-private-field kr "slots"))
+
+;; add the string foo to the current kill ring
+(-> j/*line-reader*
+    (.getClass)
+    (.getSuperclass)
+    (.getDeclaredField "killRing")
+    (doto
+      (.setAccessible true))
+    (.get j/*line-reader*)
+    (add "foo"))
+
 
 

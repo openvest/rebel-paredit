@@ -10,6 +10,13 @@
 ;; with errors in cursor placement or whitespace
 ;; we may decide to handle some of that with rewrite-clj to do some reformatting
 
+(defn str-cur
+  [s+c]
+  (let [cur (or (str/index-of s+c "|")
+                (throw (ex-info "(with-buffer s ...) missing a | to indicate cursor" {:s s+c})))
+        s (str (subs s+c 0 cur) (subs s+c (inc cur)))]
+    [s cur]))
+
 ;; some helper functions/macros
 (defmacro with-buffer
   "macro to run the body with jline-api/*buffer* bound to a buffer with the provided string
@@ -84,70 +91,102 @@
 ;; kill tests
 
 (deftest kill-test
-  (with-buffer
-    #_>>>> "(defn f[x y]\n  |(+ x 8))"
-    (is (= "(defn f[x y]\n  |)"
-           (-> (SUT/kill)
-               (display-buffer))))))
+  (let [[beg-str beg-cur] (str-cur "(defn f[x y]\n  |(+ x 8))")
+        [new-str new-cur] (str-cur "(defn f[x y]\n  |)")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
 
 (deftest kill-one-line-test
   "kill should kill upto but NOT including the <newline>"
-  (with-buffer
-    #_>>>> "(defn f|[x y]\n  (if x\n    (+ x 8)\n    (+ y 3)))"
-    (is (= "(defn f|\n  (if x\n    (+ x 8)\n    (+ y 3)))"
-           (-> (SUT/kill)
-               (display-buffer))))))
+  (let [[beg-str beg-cur] (str-cur "(defn f|[x y]\n  (if x\n    (+ x 8)\n    (+ y 3)))")
+        [new-str new-cur] (str-cur "(defn f|\n  (if x\n    (+ x 8)\n    (+ y 3)))")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
 
-(deftest ^:wip kill-at-line-end-test
-  ;; split happens but cursor is misplaced
+(deftest kill-at-line-end-test
   "kill with cursor placed at the end of the line"
-  (with-buffer
-    #_>>>> "(defn f[x y]|\n  (+ x 8))"
-    (is (= "(defn f[x y]| (+ x 8))"
-           (-> (SUT/kill)
-               (display-buffer))))))
+  (let [[beg-str beg-cur] (str-cur "(defn f[x y]|\n  (+ x 8))")
+        [new-str new-cur] (str-cur "(defn f[x y]|  (+ x 8))")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
 
 (deftest kill-end-test
-  ;; FIXME: this breaks the paren balance
   "if we end on a closing bracket do nothing"
+  (let [[beg-str beg-cur] (str-cur "(foo (bar|))")
+        [new-str new-cur] (str-cur "(foo (bar|))")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
+(deftest kill-origin-test
+  "if we end on opening it should not fail (i.e. during lookback for single-quote)"
+  (let [[beg-str beg-cur] (str-cur "|(foo (bar))")
+        [new-str new-cur] (str-cur "|")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
+(deftest kill-space-string-test
+  "some kills with a space before the string"
+  ; seems to fail with one space before the double-quote char
+  (let [[beg-str beg-cur] (str-cur "(foo | \"bar\")")
+        [new-str new-cur] (str-cur "(foo |)")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
+(deftest kill-space-string2-test
+  "some kills with a space "
+  ; seems to fail with one space before the double-quote char
+  (let [[beg-str beg-cur] (str-cur "(|foo bar)")
+        [new-str new-cur] (str-cur "(|)")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
+(deftest kill-require-in-buf-test
+  "wierd case of error inside a require"
   (with-buffer
-    #_>>>> "(foo (bar|))"
-    (is (= "(foo (bar|))"
-           (-> (SUT/kill)
+    #_>>>> "(require '|[rewrite-clj.paredit :as paredit])"
+    (is (= "(require '|)"
+           (-> (SUT/kill-in-buff)
                (display-buffer))))))
 
 (deftest kill-require-test
   "wierd case of error inside a require"
   ;; TODO: should we be removing the quote here?
-  (with-buffer
-    #_>>>> "(require '|[rewrite-clj.paredit :as paredit])"
-    (is (= "(require |)"
-           (-> (SUT/kill)
-               (display-buffer))))))
+  (let [[beg-str beg-cur] (str-cur "(require '|[rewrite-clj.paredit :as paredit])")
+        [new-str new-cur] (str-cur "(require '|)")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
 
 (deftest kill-at-whitespace-test
   "kill at whitespace node"
-  (with-buffer
-    #_>>>> "[1 2|   3]"
-    (is (= "[1 2|]"
-           (-> (SUT/kill)
-               (display-buffer))))))
+  (let [[beg-str beg-cur] (str-cur "[1 2|   3]")
+        [new-str new-cur] (str-cur "[1 2|]")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
 
 (deftest kill-inside-whitespace-test
   "kill inside a whitespace node"
-  (with-buffer
-    #_>>>> "[1 2  |   3]"
-    (is (= "[1 2  |]"
-           (-> (SUT/kill)
-               (display-buffer))))))
+  (let [[beg-str beg-cur] (str-cur "[1 2  |   3]")
+        [new-str new-cur] (str-cur "[1 2  |]")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
 
 (deftest kill-sym-test
   "kill inside a sym"
-  (with-buffer
-    #_>>>> "(foo my-|symbol)"
-    (is (= "(foo my-|)"
-           (-> (SUT/kill)
-               (display-buffer))))))
+  (let [[beg-str beg-cur] (str-cur "(foo my-|symbol)")
+        [new-str new-cur] (str-cur "(foo my-|)")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
 
 (deftest slurp-forward-test
   (with-buffer
@@ -193,14 +232,20 @@
            (-> (SUT/splice)
                (display-buffer))))))
 
-(deftest ^:wip splice-cursor-test
+(deftest ^:cursor-pos splice-cursor-test
   ;; splice happens but cursor is misplaced
   (with-buffer
     #_>>>> "[1 2 [3 |4 5]]"
     (is (= "[1 2 3 |4 5]"
            (-> (rebel-readline.clojure.paredit/splice)
-               display-buffer)))))
+               (display-buffer))))))
 
+(deftest splice-in-string-test
+  (with-buffer
+    #_>>>> "(\"|foo bar\" x)"
+    (is (= "(|foo bar x)"
+           (-> (SUT/splice)
+               (display-buffer))))))
 
 (deftest splice-at-tail-test
   (with-buffer
@@ -209,7 +254,7 @@
            (-> (SUT/splice)
                (display-buffer))))))
 
-(deftest ^:wip split-test
+(deftest ^:cursor-pos split-test
   ;; split happens but cursor is misplaced
   (with-buffer
     #_>>>> "[[1| 2] 3]"
@@ -227,7 +272,7 @@
            (-> (SUT/split)
                (display-buffer))))))
 
-(deftest ^:wip split-at-string-test
+(deftest ^:cursor-pos split-at-string-test
   ;; split happens but cursor is misplaced
   (with-buffer
     #_>>>> "[[1 \"some-|long-string\"] 3]"

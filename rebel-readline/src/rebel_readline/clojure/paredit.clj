@@ -93,71 +93,72 @@
 
 ;; buffer based functions
 ;; killing
-
-;; note that this kills more than one line
-;; which is different from other systems
-;; TODO: kill should operate on strings and not buffers so we can use the line-reader kill ring
 (defn kill
-  []
+  [s c]
+  ;; like kill but works on a string & cursor rather than j/*buffer*
   ;; special case, killing after the quote we need to backspace to remove the quote
-  ;; quote nodes can't not have 1 child
-  ;; should we add it back in at the end?
-  (when (-> j/*buffer* (.prevChar) char #{\`\'})
-    (.backspace j/*buffer*))
-  (if (#{\) \} \] \"} (char (.nextChar j/*buffer*)))              ;; add (char 0) ??
+  ;; quote nodes can't NOT have 1 child
+  (cond
     ; if we currently end on a closing bracket or quote, do nothing
-    j/*buffer*
-   (let [buf j/*buffer*
-         s (str buf)
-         cur (.cursor buf)
-         cur-pos (str-find-pos s cur)
-         cur-beg-col (:col cur-pos)
-         cur-beg-row (:row cur-pos)
-         loc (-> s
-                 (z/of-string {:track-position? true})
-                 (z/find-last-by-pos cur-pos))
-         remove? (fn [loc]
-                   (let [n (-> loc z/node)]
-                     (and (not= :newline (n/tag n))
-                          (-> loc z/node meta :row (= cur-beg-row)))))
-         new-s (cond                                        ;; should this be a multifun
-                 ;; remove a newline
-                 (-> loc z/node n/tag #{:newline})
-                 (-> loc z/remove z/root-string)            ;; remove additional whitespace or reformat?
-                 ;; truncate a token and remove until end of line
-                 (-> loc z/node n/tag #{:token :list :vector})
-                 (let [node-beg-col (-> loc z/node meta :col)]
-                   (if (= node-beg-col cur-beg-col)
-                     (-> (z/remove* loc)
-                         (rczu/remove-right-while remove?)
-                         (z/root-string))
-                     (-> loc
-                         (z/edit (comp symbol
-                                       #(subs % 0 (- cur-beg-col node-beg-col))
-                                       str))
-                         (rczu/remove-right-while remove?)
-                         (z/root-string))))
-                 ;; truncate a whitespace node and remove until end of line
-                 (-> loc z/node n/tag #{:whitespace})
-                 (let [node-beg-col (-> loc z/node meta :col)]
-                   (if (= node-beg-col cur-beg-col)
-                     (-> (z/remove* loc)
-                         (rczu/remove-right-while remove?)
-                         (z/root-string))
-                     (-> loc
-                         (z/replace (n/spaces (- cur-beg-col node-beg-col)))
-                         (rczu/remove-right-while remove?)
-                         (z/root-string))))
+    (#{\) \} \] \"} (.charAt s (inc c)))
+    [s c 0]
+    ; if we currently at a line ending, remove it
+    (#{\newline} (.charAt s c))
+    [(str (subs s 0 c) (subs s (inc c))) c 1]
+    ;; if it is just after a quote symbol process without that and add it back
+    (and (> c 0) (#{\` \'} (.charAt s (dec c))))
+    (let [[new-s _ cut-size] (kill (str (subs s 0 (dec c)) (subs s c)) (dec c))]
+      [(str (subs s 0 c) (subs new-s (dec c))) c cut-size])
+    ;; everything else is handled by rewrite-clj
+    :default
+    (let [cur-pos (str-find-pos s c)
+          cur-beg-col (:col cur-pos)
+          cur-beg-row (:row cur-pos)
+          loc (-> s
+                  (z/of-string {:track-position? true})
+                  (z/find-last-by-pos cur-pos))
+          remove? (fn [loc]
+                    (let [n (-> loc z/node)]
+                      (and (not= :newline (n/tag n))
+                           (-> loc z/node meta :row (= cur-beg-row)))))
+          new-s (cond                                     ;; should this be a multifun
+                  ;; truncate a token and remove until end of line
+                  (-> loc z/node n/tag #{:token :list :vector})
+                  (let [node-beg-col (-> loc z/node meta :col)]
+                    (if (= node-beg-col cur-beg-col)
+                      (-> (z/remove* loc)
+                          (rczu/remove-right-while remove?)
+                          (z/root-string))
+                      (-> loc
+                          (z/edit (comp symbol
+                                        #(subs % 0 (- cur-beg-col node-beg-col))
+                                        str))
+                          (rczu/remove-right-while remove?)
+                          (z/root-string))))
+                  ;; truncate a whitespace node and remove until end of line
+                  (-> loc z/node n/tag #{:whitespace})
+                  (let [node-beg-col (-> loc z/node meta :col)]
+                    (if (= node-beg-col cur-beg-col)
+                      (-> (z/remove* loc)
+                          (rczu/remove-right-while remove?)
+                          (z/root-string))
+                      (-> loc
+                          (z/replace (n/spaces (- cur-beg-col node-beg-col)))
+                          (rczu/remove-right-while remove?)
+                          (z/root-string))))
 
-                 :default #_(-> loc z/node n/tag #{:token})
-                 (z/root-string loc))]
-     (doto buf
-       (.cursor cur)
-       (.write (subs new-s cur))
-       (.delete (- (.length buf)
-                   (.cursor buf)))
-       (.cursor cur)))))
+                  :default #_(-> loc z/node n/tag #{:token})
+                  (z/root-string loc))]
+      [new-s c (- (count s) (count new-s))])))
 
+(defn kill-in-buff
+  []
+  (let [s (str j/*buffer*)
+        c (.cursor j/*buffer*)
+        [new-s new-c cut-len] (kill s c)
+        kill-str (subs s c (+ c cut-len))]
+    (j/add-to-killRing kill-str)
+    (.delete j/*buffer* cut-len)))
 
 (defn kill-all
   "For a Buffer, kill at a cursor position."

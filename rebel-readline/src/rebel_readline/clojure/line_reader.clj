@@ -487,7 +487,7 @@
 
 (def paredit-kill
   (create-widget
-    (paredit/kill)
+    (paredit/kill-in-buff)
     true))
 
 (def paredit-slurp-forward
