@@ -30,16 +30,29 @@
             (recur (rest offsets) (inc row) next-offset)
             ;; TODO: fix offsets running off the end
             (let [col (- (inc target) row-offset)]
+              ;; TODO: minor fix, on <newline> the end-row should be (inc row)
               {:row row :end-row row :col col :end-col (inc col)})))))))
 
-
 (defn str-find-pos
-  "give a string and an offset (i.e. cursor)
-  return the position (i.e. map of [:row :col :end-row :end-col]"
-  [s cursor]
+  "given a string and an offset (i.e. cursor)
+  return the position (i.e. map of [:row :col :end-row :end-col]
+  Note: inverse of str-find-cursor"
+  [^String s ^Integer cursor]
   ((str-find-pos* s) cursor))
 
+(defn str-find-cursor
+  "given a string and a position (i.e. map with [:row :col])
+  return the cursor position as an int
+  Note: inverse of str-find-pos"
+  [^String s pos]
+  (let [offsets (str-row-offsets s)]
+    (-> (:row pos)
+        dec
+        (offsets)
+        (+ (dec (:col pos))))))
+
 ;; zipper/locator based functions
+
 (defn loc->position*
   "for a locator with positions
   return a function that takes a locator from within the root
@@ -93,6 +106,7 @@
 
 ;; buffer based functions
 ;; killing
+
 (defn kill
   [s c]
   ;; like kill but works on a string & cursor rather than j/*buffer*
@@ -185,6 +199,8 @@
          (.delete (- (.length buf)
                      (.cursor buf)))
          (.cursor cur))))))
+
+;; slurp and barf
 
 (defn slurp-forward
   "For a Buffer, slurp forward"
@@ -279,6 +295,8 @@
        (.write " ")
        (.move -1)))))
 
+;; splice and split
+
 (defn splice
   "splice the list/vect"
   ([] (splice j/*buffer*))
@@ -316,3 +334,61 @@
        (.clear)
        (.write new-s)
        (.cursor cur)))))
+
+;; movement functions
+
+(defn forward
+  ([] (forward j/*buffer*))
+  ([buf] (doto buf
+           (.cursor (forward (str buf) (.cursor buf)))))
+  ([s cur]
+   (if (= cur (count s))
+     ;; if we are at the end, do nothing
+     cur
+     (let [cursor-pos (str-find-pos s cur)
+           loc (-> s
+                   (z/of-string {:track-position? true})
+                   (z/find-last-by-pos cursor-pos)
+                   (z/skip-whitespace))
+           node-pos (-> loc
+                        z/node
+                        meta)]
+       (str-find-cursor s
+                        {:row (:end-row node-pos)
+                         :col (:end-col node-pos)})))))
+
+(defn backward
+  ([] (backward j/*buffer*))
+  ([buf] (doto buf
+           (.cursor (backward (str buf) (.cursor buf)))))
+  ([s cur]
+   (if (or (= cur 0)                                        ;beg of str
+           (= cur (count s)))                               ;end of str TODO: fails on multiple forms e.g. "(foo)(bar)|"
+     ;; if we are at the beginning, do nothing
+     0
+     (let [cursor-pos (str-find-pos s cur)
+           orig-loc (-> s
+                        (z/of-string {:track-position? true})
+                        (z/find-last-by-pos cursor-pos))
+           orig-pos (-> orig-loc z/node meta)
+           left-loc (cond
+                      (= (select-keys cursor-pos [:row :col])
+                         (-> orig-loc z/node meta
+                             (select-keys [:row :col])))
+                      (if (z/leftmost? orig-loc)
+                        (z/up orig-loc)
+                        (z/left orig-loc))
+
+                      (and (= (:row cursor-pos) (:end-row orig-pos))
+                           (= (:end-col cursor-pos) (:end-col orig-pos))
+                           (-> orig-loc z/node :children seq))
+                      (-> orig-loc z/down z/rightmost)
+
+                      :default
+                      (z/skip-whitespace-left orig-loc))
+           node-pos (-> left-loc
+                        z/node
+                        meta)]
+       (str-find-cursor s
+                        {:row (:row node-pos)
+                         :col (:col node-pos)})))))

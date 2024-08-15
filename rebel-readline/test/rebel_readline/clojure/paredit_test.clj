@@ -19,14 +19,18 @@
         s (str (subs s+c 0 cur) (subs s+c (inc cur)))]
     [s cur]))
 
+(defn display-str+cur
+  "takes a buffer or [str cursor] and returns the string with a | where the cursor is"
+  ([buf] (display-str+cur (str buf) (.cursor buf)))
+  ([s cur]
+   (str (subs s 0 cur) "|" (subs s cur))))
+
 ;; some helper functions/macros
 (defmacro with-buffer
   "macro to run the body with jline-api/*buffer* bound to a buffer with the provided string
   Ths string must include a | to indicate the cursor position"
   [s & body]
-  `(let [cur# (or (str/index-of ~s "|")
-                  (throw (ex-info "(with-buffer s ...) missing a | to indicate cursor" {:s ~s})))
-         s# (str (subs ~s 0 cur#) (subs ~s (inc cur#)))
+  `(let [[s# cur#] (str-cur ~s)
          buffer# (doto (BufferImpl.)
                 (.write s#)
                 (.cursor cur#))
@@ -38,10 +42,6 @@
                #_#_j/*line-reader* line-reader#]
        ~@body)))
 
-(defn display-buffer [buf]
-  "takes a buffer and returns the string with a | where the cursor is"
-  (let [s (str buf)]
-    (str (subs s 0 (.cursor buf)) "|"  (subs s (.cursor buf)))))
 
 ;;;; String Only Tests
 (def s1 "(defn f[x y]\n  (+ x 8))")
@@ -176,7 +176,7 @@
     #_>>>> "(require '|[rewrite-clj.paredit :as paredit])"
     (is (= "(require '|)"
            (-> (SUT/kill-in-buff)
-               (display-buffer))))))
+               (display-str+cur))))))
 
 (deftest kill-require-test
   "wierd case of error inside a require"
@@ -211,12 +211,14 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
+;; slurp and barf tests
+
 (deftest slurp-forward-test
   (with-buffer
     #_>>>> "[[1 |2] [3 4] 5]"
     (is (= "[[1 |2 [3 4]] 5]"
            (-> (SUT/slurp-forward)
-               (display-buffer))))))
+               (display-str+cur))))))
 
 (deftest slurp-forward-tail-test
   "slurp forward when at the end of a list type node
@@ -225,35 +227,37 @@
       #_>>>> "[[1 2|] [3 4] 5]"
       (is (= "[[1 2| [3 4]] 5]"
              (-> (SUT/slurp-forward)
-                 (display-buffer))))))
+                 (display-str+cur))))))
 
 (deftest barf-forward-test
   (with-buffer
     #_>>>> "[[1 2| [3 4]] 5]"
     (is (= "[[1 2|] [3 4] 5]"
            (-> (SUT/barf-forward)
-               (display-buffer))))))
+               (display-str+cur))))))
 
 (deftest slurp-backward-test
   (with-buffer
     #_>>>> "[[1 2] [|3 4] 5]"
     (is (= "[[[1 2] |3 4] 5]"
            (-> (SUT/slurp-backward)
-               (display-buffer))))))
+               (display-str+cur))))))
 
 (deftest barf-backward-test
   (with-buffer
     #_>>>> "[[[1 2]| 3 4] 5]"
     (is (= "[[1 2] |[3 4] 5]"
            (-> (SUT/barf-backward)
-               (display-buffer))))))
+               (display-str+cur))))))
+
+;; splice and split tests
 
 (deftest splice-test
   (with-buffer
     #_>>>> "[[1 2|] 3]"
     (is (= "[1 2 |3]"
            (-> (SUT/splice)
-               (display-buffer))))))
+               (display-str+cur))))))
 
 (deftest ^:cursor-pos splice-cursor-test
   ;; splice happens but cursor is misplaced
@@ -261,7 +265,7 @@
     #_>>>> "[1 2 [3 |4 5]]"
     (is (= "[1 2 3 |4 5]"
            (-> (rebel-readline.clojure.paredit/splice)
-               (display-buffer))))))
+               (display-str+cur))))))
 
 (deftest ^:wip splice-in-string-test
   ;; not sure if this is proper
@@ -271,14 +275,14 @@
     #_>>>> "(\"|foo bar\" x)"
     (is (= "(|foo bar x)"
            (-> (SUT/splice)
-               (display-buffer))))))
+               (display-str+cur))))))
 
 (deftest splice-at-tail-test
   (with-buffer
     #_>>>> "[[1 2|] 3]"
     (is (= "[1 2 |3]"
            (-> (SUT/splice)
-               (display-buffer))))))
+               (display-str+cur))))))
 
 (deftest ^:cursor-pos split-test
   ;; split happens but cursor is misplaced
@@ -286,7 +290,7 @@
     #_>>>> "[[1| 2] 3]"
     (is (= "[[1]| [2] 3]"
            (-> (SUT/split)
-               (display-buffer))))))
+               (display-str+cur))))))
 
 (deftest ^:wip split-not-ok-test
   ;; split happens but cursor is misplaced
@@ -296,7 +300,7 @@
     #_>>>> "[[1 |2] 3]"
     (is (= "[[1]| [2] 3]"
            (-> (SUT/split)
-               (display-buffer))))))
+               (display-str+cur))))))
 
 (deftest ^:cursor-pos split-at-string-test
   ;; split happens but cursor is misplaced
@@ -304,8 +308,198 @@
     #_>>>> "[[1 \"some-|long-string\"] 3]"
     (is (= "[[1 \"some-\"| \"long-string\"] 3]"
            (-> (SUT/split)
-               (display-buffer))))))
+               (display-str+cur))))))
 
+;; movement tests
+
+(deftest ^:movement forward-1-test
+  (with-buffer
+    #_>>>> "[0 [1| :foo  3] :bar]"
+    (is (= "[0 [1 :foo|  3] :bar]"
+           (-> (SUT/forward)
+               (display-str+cur))))))
+
+(deftest ^:movement forward-2-test
+  (with-buffer
+    #_>>>> "[0 [1 :f|oo  3] :bar]"
+    (is (= "[0 [1 :foo|  3] :bar]"
+           (-> (SUT/forward)
+               (display-str+cur))))))
+
+(deftest ^:wip-movement forward-newline-test
+  (with-buffer
+    #_>>>> "[x|\n]"
+    (is (= "[x\n]|"
+           (-> (SUT/forward)
+               (display-str+cur))))))
+
+(deftest ^:movement forward-end-test
+  (with-buffer
+    #_>>>> "[x]|"
+    (is (= "[x]|"
+           (-> (SUT/forward)
+               (display-str+cur))))))
+
+(deftest ^:movement forward-multi-23-test
+  (doall (for [[orig target] [["|[1 [22 :foo  bar]\n :z]"
+                         "[1 [22 :foo  bar]\n :z]|"]
+
+                        ["[|1 [22 :foo  bar]\n :z]"
+                         "[1| [22 :foo  bar]\n :z]"]
+
+                        ["[1| [22 :foo  bar]\n :z]"
+                         "[1 [22 :foo  bar]|\n :z]"]
+
+                        ["[1 |[22 :foo  bar]\n :z]"
+                         "[1 [22 :foo  bar]|\n :z]"]
+
+                        ["[1 [|22 :foo  bar]\n :z]"
+                         "[1 [22| :foo  bar]\n :z]"]
+
+                        ["[1 [2|2 :foo  bar]\n :z]"
+                         "[1 [22| :foo  bar]\n :z]"]
+
+                        ["[1 [22| :foo  bar]\n :z]"
+                         "[1 [22 :foo|  bar]\n :z]"]
+
+                        ["[1 [22 |:foo  bar]\n :z]"
+                         "[1 [22 :foo|  bar]\n :z]"]
+
+                        ["[1 [22 :|foo  bar]\n :z]"
+                         "[1 [22 :foo|  bar]\n :z]"]
+
+                        ["[1 [22 :f|oo  bar]\n :z]"
+                         "[1 [22 :foo|  bar]\n :z]"]
+
+                        ["[1 [22 :fo|o  bar]\n :z]"
+                         "[1 [22 :foo|  bar]\n :z]"]
+
+                        ["[1 [22 :foo|  bar]\n :z]"
+                         "[1 [22 :foo  bar|]\n :z]"]
+
+                        ["[1 [22 :foo | bar]\n :z]"
+                         "[1 [22 :foo  bar|]\n :z]"]
+
+                        ["[1 [22 :foo  |bar]\n :z]"
+                         "[1 [22 :foo  bar|]\n :z]"]
+
+                        ["[1 [22 :foo  b|ar]\n :z]"
+                         "[1 [22 :foo  bar|]\n :z]"]
+
+                        ["[1 [22 :foo  ba|r]\n :z]"
+                         "[1 [22 :foo  bar|]\n :z]"]
+
+                        ["[1 [22 :foo  bar|]\n :z]"
+                         "[1 [22 :foo  bar]|\n :z]"]
+
+                        ["[1 [22 :foo  bar]|\n :z]"
+                         "[1 [22 :foo  bar]\n :z|]"]
+
+                        ["[1 [22 :foo  bar]\n| :z]"
+                         "[1 [22 :foo  bar]\n :z|]"]
+
+                        ["[1 [22 :foo  bar]\n |:z]"
+                         "[1 [22 :foo  bar]\n :z|]"]
+
+                        ["[1 [22 :foo  bar]\n :|z]"
+                         "[1 [22 :foo  bar]\n :z|]"]
+
+                        ["[1 [22 :foo  bar]\n :z|]"
+                         "[1 [22 :foo  bar]\n :z]|"]
+
+                        ["[1 [22 :foo  bar]\n :z]|"
+                         "[1 [22 :foo  bar]\n :z]|"]]
+         :let [[s cur] (str-cur orig)]]
+           (do
+             (is (= target
+                    (->> (SUT/forward s cur)
+                         (display-str+cur s))))))))
+
+(deftest ^:movement backward-1-test
+  (with-buffer
+    #_>>>> "[0 [1| :foo  3] :bar]"
+    (is (= "[0 [|1 :foo  3] :bar]"
+           (-> (SUT/backward)
+               (display-str+cur))))))
+
+(deftest ^:movement backward-2-test
+  (with-buffer
+    #_>>>> "[0 [1 :f|oo  3] :bar]"
+    (is (= "[0 [1 |:foo  3] :bar]"
+           (-> (SUT/backward)
+               (display-str+cur))))))
+
+(deftest ^:movement backward-multi-23-test
+  (doall (for [[orig target] [["|[1 [22 :foo  bar]\n:z]"
+                               "|[1 [22 :foo  bar]\n:z]"]
+                              ["[|1 [22 :foo  bar]\n:z]"
+                               "|[1 [22 :foo  bar]\n:z]"]
+                              ["[1| [22 :foo  bar]\n:z]"
+                               "[|1 [22 :foo  bar]\n:z]"]
+                              ["[1 |[22 :foo  bar]\n:z]"
+                               "[|1 [22 :foo  bar]\n:z]"]
+                              ["[1 [|22 :foo  bar]\n:z]"
+                               "[1 |[22 :foo  bar]\n:z]"]
+                              ["[1 [2|2 :foo  bar]\n:z]"
+                               "[1 [|22 :foo  bar]\n:z]"]
+                              ["[1 [22| :foo  bar]\n:z]"
+                               "[1 [|22 :foo  bar]\n:z]"]
+                              ["[1 [22 |:foo  bar]\n:z]"
+                               "[1 [|22 :foo  bar]\n:z]"]
+                              ["[1 [22 :|foo  bar]\n:z]"
+                               "[1 [22 |:foo  bar]\n:z]"]
+                              ["[1 [22 :f|oo  bar]\n:z]"
+                               "[1 [22 |:foo  bar]\n:z]"]
+                              ["[1 [22 :fo|o  bar]\n:z]"
+                               "[1 [22 |:foo  bar]\n:z]"]
+                              ["[1 [22 :foo|  bar]\n:z]"
+                               "[1 [22 |:foo  bar]\n:z]"]
+                              ["[1 [22 :foo | bar]\n:z]"
+                               "[1 [22 |:foo  bar]\n:z]"]
+                              ["[1 [22 :foo  |bar]\n:z]"
+                               "[1 [22 |:foo  bar]\n:z]"]
+                              ["[1 [22 :foo  b|ar]\n:z]"
+                               "[1 [22 :foo  |bar]\n:z]"]
+                              ["[1 [22 :foo  ba|r]\n:z]"
+                               "[1 [22 :foo  |bar]\n:z]"]
+                              ;; end of vector
+                              ["[1 [22 :foo  bar|]\n:z]"
+                               "[1 [22 :foo  |bar]\n:z]"]
+                              ["[1 [22 :foo  bar]|\n:z]"
+                               "[1 |[22 :foo  bar]\n:z]"]
+                              ["[1 [22 :foo  bar]\n|:z]"
+                               "[1 |[22 :foo  bar]\n:z]"]
+                              ["[1 [22 :foo  bar]\n|:z]"
+                               "[1 |[22 :foo  bar]\n:z]"]
+                              ["[1 [22 :foo  bar]\n:|z]"
+                               "[1 [22 :foo  bar]\n|:z]"]
+                              ;; end of vector
+                              ["[1 [22 :foo  bar]\n:z|]"
+                               "[1 [22 :foo  bar]\n|:z]"]
+                              ["[1 [22 :foo  bar]\n:z]|"
+                               "|[1 [22 :foo  bar]\n:z]"]]
+               :let [[s cur] (str-cur orig)]]
+           (do
+             (is (= target
+                    (try (->> (SUT/backward s cur)
+                              (display-str+cur s))
+                         (catch Exception e  (str "ERROR on backward movement of " orig)))))))))
+
+(comment
+  ;; look for error if we end with whitespace like "[x\n]"
+  (let [s "[1 [22 :foo  bar]\n :z]"
+        z (z/of-string s {:track-position? true})]
+    (for [cur (range (count s))
+          :let [cursor-pos (SUT/str-find-pos s cur)
+                node-pos (-> (z/find-last-by-pos z cursor-pos)
+                             (z/skip-whitespace)
+                             (z/node)
+                             meta)
+                orig-s (display-str+cur s cur)
+                new-s (try (->> (SUT/backward s cur)
+                                (display-str+cur s))
+                           (catch Exception e "Error"))]]
+      [#_#_cursor-pos node-pos orig-s new-s ])))
 (comment
   ;all cursor positions
   (let [buf (doto (BufferImpl.)
@@ -317,5 +511,5 @@
              (.write s)
              (.cursor cur)
              (.write "|")))))
+)
 
-  )

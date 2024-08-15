@@ -525,6 +525,16 @@
     (paredit/split)
     true))
 
+(def paredit-forward
+  (create-widget
+    (paredit/forward)
+    true))
+
+(def paredit-backward
+  (create-widget
+    (paredit/backward)
+    true))
+
 ;why doesn't this work in add-all-widgets?
 (defn autopair-widget
   "create AutopairWidgets on the currently bound *line-reader*"
@@ -859,7 +869,9 @@
     (register-widget "paredit-barf-backward"      paredit-barf-backward)
     (register-widget "paredit-open-and-slurp"     paredit-open-and-slurp)
     (register-widget "paredit-splice"             paredit-splice)
-    (register-widget "paredit-split"              paredit-split)))
+    (register-widget "paredit-split"              paredit-split)
+    (register-widget "paredit-forward"            paredit-forward)
+    (register-widget "paredit-backward"           paredit-backward)))
 
 (defn bind-indents [km-name]
   (doto km-name
@@ -887,6 +899,8 @@
     (key-binding (str (KeyMap/translate "^[[1;5D")) "paredit-barf-forward") ; windows ctrl-left-arrow
     (key-binding (str (KeyMap/translate "^[[1;7D")) "paredit-slurp-backward") ; windows alt-ctrl-left-arrow
     (key-binding (str (KeyMap/translate "^[[1;7C")) "paredit-barf-backward") ; windows alt-ctrl-right-arrow
+    (key-binding (str (KeyMap/translate "^[^F")) "paredit-forward") ; windows alt-ctrl-f
+    (key-binding (str (KeyMap/translate "^[^B")) "paredit-backward") ; windows alt-ctrl-b
     ;(key-binding (str (KeyMap/translate "[[C")) "paredit-slurp-forward") ;; no luck.  for a different terminal?
     ;(key-binding (str (KeyMap/key api/*terminal* InfoCmp$Capability/key_right)) "paredit-slurp-forward") ;; windows is right arrow (no alt or ctrl)
     ;(key-binding (str (KeyMap/ctrl (char 0x4D))) "paredit-slurp-forward") ; ctrl-right-arrow
