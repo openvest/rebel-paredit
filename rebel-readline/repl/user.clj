@@ -20,3 +20,12 @@
               (map (fn [[s v]] (list 'def s v))))
        ~@body))
 
+(comment
+  ;; how to get imports or require map from another file
+  (->> (clojure.edn/read-string (slurp "repl/user.clj"))
+       (drop-while (complement coll?))
+       (map (juxt first (comp vec rest)))
+       (into {})
+       :import
+       pprint))
+

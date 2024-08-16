@@ -1,6 +1,6 @@
 (ns rebel-readline.clojure.paredit-reference-card-test
   "These examples are from the Paredit Reference Card pdf for version 22
-  some examples are `closureized` some are modified to suit emacs behavior
+  some examples are `clojureized` some are modified to suit emacs behavior
   or other differences as noted.
   No additional tests are added; look to the other test modules for more
   edge case testing"

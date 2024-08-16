@@ -351,12 +351,28 @@
            (-> (SUT/forward)
                (display-str+cur))))))
 
+(def SUT (-> (ns-aliases *ns*)
+             (get 'SUT)
+             (str)
+             (str/replace "-" "_")))
+
+;; This is long, but it's my first attempt at a "reduced size" exception report
+;; the report is returned as a Fail not an Error
+;; if this is worthwhile, it should be baked into a macro
+;; assumes the SUT is the module being tested
+;; look at the test reporting facilities in clojure or kaocha as a better alternative
 (deftest ^:movement ^:wip forward-newline-test
   (with-buffer
     #_>>>> "[x|\n]"
     (is (= "[x\n]|"
-           (-> (SUT/forward)
-               (display-str+cur))))))
+           (try
+             (-> (SUT/forward "[x\n]" 2)
+                 first)
+             (catch Exception e (-> e
+                                    Throwable->map
+                                    (update :trace
+                                            (partial filter #(str/starts-with? (str (first %))  SUT)))
+                                    (assoc-in [:data :SUT] SUT))))))))
 
 (deftest ^:movement forward-end-test
   (with-buffer

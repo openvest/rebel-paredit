@@ -6,13 +6,14 @@
 ;; bind a key to a widget name
 ;; why doesn't this work
 ;(swap! j/*line-reader* update-in  [:key-bindings :main]   (fnil conj []) ["U" "clojure-force-accept-line"])
-(swap! j/*line-reader* update-in [:key-bindings :main] #((fnil conj []) %1 (first %2)) ["U" "clojure-force-accept-line"])
-(j/apply-key-bindings!)
+#_(do (swap! j/*line-reader* update-in [:key-bindings :main] #((fnil conj []) %1 (first %2)) ["U" "clojure-force-accept-line"])
+      (j/apply-key-bindings!))
 ;; something funky with swap! calling the proxy swap which does an (apply swap! ...
 
 ;; but this does work
-(swap! j/*line-reader* update ::j/key-bindings (constantly {:main [["C" "clojure-force-accept-line"]]}))
-(j/apply-key-bindings!)
+#_(do
+    (swap! j/*line-reader* update ::j/key-bindings (constantly {:main [["C" "clojure-force-accept-line"]]}))
+    (j/apply-key-bindings!))
 
 ;; weird and wonky but this works too
 (swap! j/*line-reader* update-in [::j/key-bindings :emacs]

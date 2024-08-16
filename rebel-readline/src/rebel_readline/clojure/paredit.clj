@@ -108,10 +108,10 @@
 ;; killing
 
 (defn kill
-  [s c]
+  [^String s ^Integer c]
   ;; like kill but works on a string & cursor rather than j/*buffer*
-  ;; special case, killing after the quote we need to backspace to remove the quote
-  ;; quote nodes can't NOT have 1 child
+  ;; special case, killing after the quote we need to backspace to remove the quote.
+  ;; quote nodes MUST have 1 child
   (cond
     ; if we currently end on a closing bracket or quote, do nothing
     (or (= c (count s))
