@@ -81,14 +81,18 @@
 (str (.getBuffer line-reader))
 
 ;; show all bindings in a keymap
-(let [km (.get (.getKeyMaps line-reader) "emacs")]
-     (->> (.getBoundKeys km)
-          (map (juxt (comp #(subs % 1 (dec (count %)))
-                           #(KeyMap/display %)
-                           key)
-                     (comp str
-                           val)))
-          pprint))
+(defn show-key-bindings
+  "like (show-key-bindings \"emacs\") "
+  [map-name]
+ (let [km (.get (.getKeyMaps line-reader) map-name)]
+   (->> (.getBoundKeys km)
+        (map (juxt (comp #(subs % 1 (dec (count %)))
+                         #(KeyMap/display %)
+                         key)
+                   (comp str
+                         val)))
+        (filter #(not= "beep" (second %)))
+        pprint)))
 
 
 ;; expanded macro. returns a function that takes a line-reader

@@ -373,8 +373,7 @@
            orig-pos (-> orig-loc z/node meta)
            left-loc (cond
                       (= (select-keys cursor-pos [:row :col])
-                         (-> orig-loc z/node meta
-                             (select-keys [:row :col])))
+                         (select-keys orig-pos [:row :col]))
                       (if (z/leftmost? orig-loc)
                         (z/up orig-loc)
                         (z/left orig-loc))

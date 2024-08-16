@@ -26,8 +26,10 @@
          '[rewrite-clj.paredit :as pe])
 
 (def s "(defn f[x y]\n  (+ x 8))")
-(def p (p/parse-string s))
-(def z (z/of-node p {:track-position? true}))
+#_(def p (p/parse-string s))
+#_(def z (z/of-node p {:track-position? true}))
+;or
+(def z (z/of-string s {:track-position? true}))
 
 ; z/next does a postwalk depth first traversal
 (-> z

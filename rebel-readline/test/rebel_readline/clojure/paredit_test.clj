@@ -151,7 +151,7 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
-(deftest ^:wip kill-space-string-testa
+(deftest ^:wip kill-space-string-test
   "some kills with a space before the string"
   ; seems to fail with one space before the double-quote char
   (let [[beg-str beg-cur] (str-cur "(foo | \"bar\")")
@@ -168,6 +168,14 @@
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
+
+(deftest kill-hash-mark-test
+  (let [[beg-str beg-cur] (str-cur "(|#(inc %) 2)")
+        [new-str new-cur] (str-cur "(|)")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
 
 ; TODO: this test requires a killRing inside a line-reader.  Can't (yet) create this in testing
 #_(deftest ^:wip kill-require-in-buf-test
@@ -199,6 +207,14 @@
   "kill inside a whitespace node"
   (let [[beg-str beg-cur] (str-cur "[1 2  |   3]")
         [new-str new-cur] (str-cur "[1 2  |]")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
+(deftest ^:balance-error kill-inside-string-literal-test
+  "kill inside a string"
+  (let [[beg-str beg-cur] (str-cur "[:a \"some| string\"]")
+        [new-str new-cur] (str-cur "[:a \"some|\"]")
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
@@ -236,6 +252,14 @@
            (-> (SUT/barf-forward)
                (display-str+cur))))))
 
+(deftest ^:balance-error barf-forward-at-last-node-test
+  ; TODO: this causes an invalid sexp
+  (with-buffer
+    #_>>>> "[1 |123]"
+    (is (= "[1] |123"
+           (-> (SUT/barf-forward)
+               (display-str+cur))))))
+
 (deftest slurp-backward-test
   (with-buffer
     #_>>>> "[[1 2] [|3 4] 5]"
@@ -270,7 +294,8 @@
 (deftest ^:wip splice-in-string-test
   ;; not sure if this is proper
   ;; this is the emacs and cursive behavior but could cause imbalanced parens
-  ;; so maybe it is not a good thing??
+  ;; so, maybe it is not a good thing??
+  ;; maybe allow if balanced, else reject
   (with-buffer
     #_>>>> "(\"|foo bar\" x)"
     (is (= "(|foo bar x)"
@@ -326,7 +351,7 @@
            (-> (SUT/forward)
                (display-str+cur))))))
 
-(deftest ^:wip-movement forward-newline-test
+(deftest ^:movement ^:wip forward-newline-test
   (with-buffer
     #_>>>> "[x|\n]"
     (is (= "[x\n]|"
@@ -341,7 +366,7 @@
                (display-str+cur))))))
 
 (deftest ^:movement forward-multi-23-test
-  (doall (for [[orig target] [["|[1 [22 :foo  bar]\n :z]"
+  (dorun (for [[orig target] [["|[1 [22 :foo  bar]\n :z]"
                          "[1 [22 :foo  bar]\n :z]|"]
 
                         ["[|1 [22 :foo  bar]\n :z]"
@@ -410,10 +435,9 @@
                         ["[1 [22 :foo  bar]\n :z]|"
                          "[1 [22 :foo  bar]\n :z]|"]]
          :let [[s cur] (str-cur orig)]]
-           (do
-             (is (= target
-                    (->> (SUT/forward s cur)
-                         (display-str+cur s))))))))
+           (is (= target
+                  (->> (SUT/forward s cur)
+                       (display-str+cur s)))))))
 
 (deftest ^:movement backward-1-test
   (with-buffer
@@ -430,7 +454,7 @@
                (display-str+cur))))))
 
 (deftest ^:movement backward-multi-23-test
-  (doall (for [[orig target] [["|[1 [22 :foo  bar]\n:z]"
+  (dorun (for [[orig target] [["|[1 [22 :foo  bar]\n:z]"
                                "|[1 [22 :foo  bar]\n:z]"]
                               ["[|1 [22 :foo  bar]\n:z]"
                                "|[1 [22 :foo  bar]\n:z]"]
@@ -479,11 +503,11 @@
                               ["[1 [22 :foo  bar]\n:z]|"
                                "|[1 [22 :foo  bar]\n:z]"]]
                :let [[s cur] (str-cur orig)]]
-           (do
+           (testing (str "backward: " (with-out-str (pr orig)))
              (is (= target
                     (try (->> (SUT/backward s cur)
                               (display-str+cur s))
-                         (catch Exception e  (str "ERROR on backward movement of " orig)))))))))
+                         (catch Exception _e (str "ERROR on backward movement of " orig)))))))))
 
 (comment
   ;; look for error if we end with whitespace like "[x\n]"

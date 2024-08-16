@@ -48,6 +48,8 @@
     (is (= 9 (find-open-pos "0123\"56\"8\"ab" 20)))
     (is (= 9 (find-open-pos "0123\"56\"8\"ab" 20))))
 
+  (testing "paredit-strs"
+    (is (= 9 (find-open-pos "(foo [bar [x)" 100))))
   )
 
 (defn find-end [sexp pos]
