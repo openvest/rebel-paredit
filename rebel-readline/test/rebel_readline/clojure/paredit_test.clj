@@ -253,12 +253,40 @@
                (display-str+cur))))))
 
 (deftest ^:balance-error barf-forward-at-last-node-test
+  "rewrite-clj compresses spaces
+  Note: emacs and intellij have different behavior
+  emacs keeps the cursor in place which it then outside
+  cursive keeps the cursor inside the vector and compresses extra spaces
+  this also mokes cursive able to barf multiple times by repeating"
   ; TODO: this causes an invalid sexp
-  (with-buffer
-    #_>>>> "[1 |123]"
-    (is (= "[1] |123"
-           (-> (SUT/barf-forward)
-               (display-str+cur))))))
+  (testing "barf-forward from : [1 |123]"
+    (with-buffer
+      #_>>>> "[1 |123]"
+      (is (= "[1] |123"
+             (-> (SUT/barf-forward)
+                 (display-str+cur)))))))
+
+(deftest barf-forward-str-node-test
+  "rewrite-clj compresses spaces
+  Note: emacs and intellij have different behavior"
+  (testing "barf-forward-str from : [[1  |   123]]"
+    (let [[s cur]
+          (str-cur
+            "[[1   |  123]]")]
+      (is (= "[[1|] 123]"
+             (->> (SUT/barf-forward-str s cur)
+                  (apply display-str+cur)))))))
+
+(deftest barf-forward-str-repl-test
+  (let [s "[1 [:a 7 :key] :b]"]
+    (doall (for  [c (range (count s))]
+             (let [orig (display-str+cur s c)
+                   modified (try
+                              (->> (SUT/barf-forward-str s c)
+                                   (apply display-str+cur))
+                              (catch Exception e (->> e Throwable->map :cause (str "Error cause:" ))))]
+               (testing (str "barf-forward-str with: "orig)
+                 (is (= nil (re-find #"^Error.*" (str modified))))))))))
 
 (deftest slurp-backward-test
   (with-buffer

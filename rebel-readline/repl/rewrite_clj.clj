@@ -1,8 +1,8 @@
-(ns rewrite-clj
+(ns user
   (:require [rewrite-clj.parser :as p]
             [rewrite-clj.node :as n]
             [rewrite-clj.zip :as z]
-            [rewrite-clj.paredit :as pe]
+            [rewrite-clj.paredit :as rpe]
             [rewrite-clj.custom-zipper.utils :as rczu]
             [clojure.string :as str]
             [clojure.pprint :refer [pprint]]))
@@ -23,7 +23,7 @@
 (require '[rewrite-clj.parser :as p]
          '[rewrite-clj.node :as n]
          '[rewrite-clj.zip :as z]
-         '[rewrite-clj.paredit :as pe])
+         '[rewrite-clj.paredit :as rpe])
 
 (def s "(defn f[x y]\n  (+ x 8))")
 #_(def p (p/parse-string s))
@@ -304,3 +304,21 @@
   (+ x 8)) "
 1111111222
 4567890123")
+
+(require '[rebel-readline.clojure.paredit :as pe]
+         '[rebel-readline.clojure.paredit-test :refer [display-str+cur] :as pet]
+         '[clojure.test :refer [deftest is testing] :as test]
+         :reload)
+
+(deftest barf-forward-repl-test 
+(let [s "[1 [:a 7 :key] :b]"]
+  (doall (for  [c (range (count s))]
+           (let [orig (display-str+cur s c)
+                 modified (try
+                            (->> (pe/barf-forward-str s c)
+                                 (apply display-str+cur))
+                            (catch Exception e "oops" #_(-> e Throwable->map :cause (subs 0 20)) ))]
+             (testing (str "barf-forward-str with: " orig)
+              (is (= "oops" modified))))))))
+(test/run-test barf-forward-repl-test)
+(test/run-test-var #'barf-forward-repl-test)

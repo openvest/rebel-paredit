@@ -14,7 +14,7 @@
            [org.jline.terminal TerminalBuilder]))
 
 ;;;;;;;;;; Basic Insertion Commands ;;;;;;;;;;
-(deftest paredit-open-round
+#_(deftest paredit-open-round
   "(a b |c d)"
   "(a b (|) c d)"
 
@@ -22,7 +22,7 @@
   "(foo \"bar (|baz\" quux)"
   )
 
-(deftest paredit-close-round
+#_(deftest paredit-close-round
   "(a b |c  )"
   "(a b c)|"
 
@@ -30,14 +30,15 @@
   "; Hello,)| world!"
   )
 
-(deftest paredit-close-round-and-newline
+#_(deftest paredit-close-round-and-newline
   "Not sure about this example. It's more lispy than clojure
   Maybe work with square brackets?"
   "(defn f (x|  ))"
   "(defn f (x)\n  |)"
   )
 
-(deftest paredit-open-square
+#_(deftest paredit-open-square
+
   "(a b |c d)"
   "(a b [|] c d)"
 
@@ -46,12 +47,13 @@
 
   )
 
-(deftest paredit-close-square
+#_(deftest paredit-close-square
   "(define-key keymap [frob|  ] 'frobnicate)"
   "(define-key keymap [frob]| 'frobnicate)"
   )
 
-(deftest paredit-doublequote
+#_(deftest paredit-doublequote
+
   "(frob grovel |full lexical)"
   "(frob grovel \"|\" full lexical)"
 
@@ -59,26 +61,28 @@
   "(foo \"bar \"|baz\" quux)"
   )
 
-(deftest paredit-meta-doublequote
+#_(deftest paredit-meta-doublequote
+
   "(foo \"bar |baz\" quux)"
   "(foo \"bar baz\"| quux)"  ;; emacs behavior
   ;; "(foo \"bar baz\"\n    |quux)"  ;; ref card
   )
 
-(deftest paredit-backslash
+#_(deftest paredit-backslash
   "example modified for clojure
   Note: is invalid sexp until the next character is typed"
   "(str )"
   "(str \\)"
   )
 
-(deftest paredit-comment-dwim
+#_(deftest paredit-comment-dwim
+
   "This is a bit of whose right/choose your own adventure
   paredit-ref-card, emacs and cursive all have different behaviors"
   "(foo |bar)"
   )
 
-(deftest paredit-newline
+#_(deftest paredit-newline
   "not much diff from default behavior except perhaps indenting
   Note: example modified for clojure"
   "(let [s frobnicate] | (str (inc n)"
@@ -86,69 +90,72 @@
   )
 
 ;;;;;;;;;; Deleting & Killing
-(deftest paredit-forward-delete
+#_(deftest paredit-forward-delete
   )
 
-(deftest paredit-backward-delete
+#_(deftest paredit-backward-delete
+
   )
 
-(deftest paredit-kill
+#_(deftest paredit-kill
   )
 
-(deftest paredit-forward-kill-word
+#_(deftest paredit-forward-kill-word
   )
 
-(deftest paredit-backward-kill-word
+#_(deftest paredit-backward-kill-word
   )
 
 ;;;;;;;;;; Movement & Navigation ;;;;;;;;;;
-(deftest paredit-forward
+#_(deftest paredit-forward
   )
 
-(deftest paredit-backward
+#_(deftest paredit-backward
   )
 
 ;;;;;;;;;; Depth-Changing Commands ;;;;;;;;;;
-(deftest paredit-wrap-round
+#_(deftest paredit-wrap-round
   )
 
-(deftest paredit-splice-sexp
+#_(deftest paredit-splice-sexp
+
   )
 
-(deftest paredit-splice-sexp-killing-backward
+#_(deftest paredit-splice-sexp-killing-backward
   )
 
-(deftest paredit-splice-sexp-killing-forward
+#_(deftest paredit-splice-sexp-killing-forward
   )
 
-(deftest paredit-rise-sexp
+#_(deftest paredit-rise-sexp
+
   )
 
 ;;;;;;;;;; Barfage & Slurpage ;;;;;;;;;;
-(deftest paredit-forward-slurp-sexp
+#_(deftest paredit-forward-slurp-sexp
   )
 
-(deftest paredit-forward-barf-sexp
+#_(deftest paredit-forward-barf-sexp
   )
 
-(deftest paredit-backward-slurp-sexp
+#_(deftest paredit-backward-slurp-sexp
   )
 
-(deftest paredit-backward-barf-sexp
+#_(deftest paredit-backward-barf-sexp
   )
 
 ;;;;;;;;;; Miscellaneous Commands ;;;;;;;;;;
-(deftest paredit-split-sexp
+#_(deftest paredit-split-sexp
   )
 
-(deftest paredit-join-sexp
+#_(deftest paredit-join-sexp
   )
 
-(deftest paredit-recentre-on-sexp
+#_(deftest paredit-recentre-on-sexp
   "no examples on ref card"
   )
 
-(deftest paredit-reindent-defn
+#_(deftest paredit-reindent-defn
   "no examples on ref card"
   )
 

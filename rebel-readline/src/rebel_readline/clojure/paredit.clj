@@ -44,12 +44,14 @@
   "given a string and a position (i.e. map with [:row :col])
   return the cursor position as an int
   Note: inverse of str-find-pos"
-  [^String s pos]
-  (let [offsets (str-row-offsets s)]
-    (-> (:row pos)
-        dec
-        (offsets)
-        (+ (dec (:col pos))))))
+  [^String s pos & at-end?]
+  (let [offsets (str-row-offsets s)
+        row-offset (-> (:row pos)
+                       dec
+                       (offsets))]
+    (if (first at-end?)
+      (+ row-offset (:end-col pos))
+      (+ row-offset (:col pos) -1))))
 
 ;; zipper/locator based functions
 
@@ -138,7 +140,7 @@
                            (-> loc z/node meta :row (= cur-beg-row)))))
           new-s (cond                                     ;; should this be a multifun
                   ;; truncate a token and remove until end of line
-                  (-> loc z/node n/tag #{:token :list :vector})
+                  (-> loc z/node n/tag #{:token :list :vector :set})
                   (let [node-beg-col (-> loc z/node meta :col)]
                     (if (= node-beg-col cur-beg-col)
                       (-> loc
@@ -243,6 +245,72 @@
        (.delete (- (.length buf)
                    (.cursor buf)))
        (.cursor cur)))))
+
+(defn movement
+  "helper function that applies movements to a locator
+  like using -> but is usable like
+  `(condp movement loc
+    [z/down z/right] [:some return]
+    [z/down z/down] :>> #(do-something-with-result %))`
+  short-circuits on first `nil`"
+  [movements loc]
+  (reduce (fn [loc move] (or (move loc) (reduced nil)))
+          loc
+          movements))
+
+(defn wrap-loc
+  "helper to allow calling a method that takes [str cur]
+  to be callable with a locator"
+  [loc s-fn]
+  (let [root-s (z/root-string loc)]
+    (->> loc
+         z/node
+         meta
+         (str-find-cursor root-s)
+         (s-fn root-s))))
+
+
+(defn barf-forward-str
+  "For a Buffer, barf forward"
+  ([] (barf-forward j/*buffer*))
+  ([buf] (barf-forward-str (str buf) (.cursor buf)))
+  ([s cur]
+   (let [cur-pos (str-find-pos s cur)
+         z (z/of-string s {:track-position? true})
+         loc (z/find-last-by-pos z cur-pos)
+         node (z/node loc)
+         node-pos (meta node)]
+     (if (and (-> node n/tag #{:map :list :vector :set :forms})
+              (= ((juxt :end-row :end-col) cur-pos)
+                 ((juxt :end-row :end-col) node-pos)))
+       ;; the cursor is on the end of a collection (i.e. at the end delimiter)
+       ;; zipper edge case so lots of logic here :-(
+       (condp movement loc
+         ; nothing in it so do nothing
+         [z/down nil?] [s cur #_nil]
+         ; use rewrite-clj.paredit and set the cursor to the end of the second to last child
+         [z/down z/rightmost] :>> (fn [rightmost]
+                                    (let  [new-cur
+                                           (if (z/leftmost? rightmost)
+                                             (inc (str-find-cursor s node-pos))
+                                             (-> rightmost z/left z/node meta
+                                                 (#(str-find-cursor s % :at-end)))) ]
+                                      [(-> rightmost pe/barf-forward z/root-string)
+                                       new-cur])))
+       ;; not at the end so this is much simpler ... except for the cursor placement logic
+       [(-> loc
+            pe/barf-forward
+            z/root-string)
+        (cond
+          ;; if it's the only one then point to one past the start of the vector/list
+          (and (z/rightmost? loc) (z/leftmost? loc))
+          (str-find-cursor s node-pos)
+          ;; if it's at the right move the cursor to one past the left sibling
+          (-> loc z/skip-whitespace z/rightmost?)
+          ((-> loc z/skip-whitespace-left z/node meta
+               (#(str-find-cursor s % :at-end))))
+          ;; just keep the same cursor
+          :default cur)]))))
 
 (defn slurp-backward
   "For a Buffer, slurp backward"
