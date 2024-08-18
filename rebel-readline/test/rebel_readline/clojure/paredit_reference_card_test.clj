@@ -5,13 +5,10 @@
   No additional tests are added; look to the other test modules for more
   edge case testing"
   (:require [rebel-readline.clojure.paredit :as SUT]
-            [rebel-readline.jline-api :as j]
             [rebel-readline.core]
-            [rewrite-clj.zip :as z]
-            [clojure.string :as str]
-            [clojure.test :refer :all])
-  (:import [org.jline.reader.impl LineReaderImpl BufferImpl]
-           [org.jline.terminal TerminalBuilder]))
+            [repl-balance.test-helpers :refer [s-cur-test]]
+            [clojure.test :refer :all]))
+
 
 ;;;;;;;;;; Basic Insertion Commands ;;;;;;;;;;
 #_(deftest paredit-open-round
@@ -89,16 +86,33 @@
   "(let [s frobnicate]\n  |(str (inc n)"
   )
 
-;;;;;;;;;; Deleting & Killing
+;;;;;;;;;; Deleting & Killing ;;;;;;;;;;
+
 #_(deftest paredit-forward-delete
-  )
+    ;; FIXME: not kill this should be forward delete character
+  (s-cur-test SUT/kill
+              "(quu|x \"zot\")"
+              "(quu| \"zot\")"))
 
 #_(deftest paredit-backward-delete
 
   )
 
-#_(deftest paredit-kill
-  )
+(deftest paredit-kill
+  (s-cur-test SUT/kill
+              "(foo bar)|  ;; Useless Comment"
+              "(foo bar)|")
+  (s-cur-test SUT/kill
+              "(|foo bar)  ;; Useless Comment"
+              "(|)  ;; Useless Comment")
+  (s-cur-test SUT/kill
+              "|(foo bar)  ;; Useless Line"
+              "|")
+  ;; FIXME: breaking and breaks balance.
+  ;;       Also is the buffer and string behavior different?
+  (s-cur-test SUT/kill
+              "(foo \"|bar baz\"\n     quux)"
+              "(foo \"|\"\n     quux)"))
 
 #_(deftest paredit-forward-kill-word
   )

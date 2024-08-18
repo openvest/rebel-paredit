@@ -68,6 +68,15 @@
 
 (defn call-widget [widget-name]
   (.callWidget *line-reader* widget-name))
+
+;; expanded `create-widget` macro. returns a function that takes a line-reader
+;; and wraps uses that in a clojure to return a zero arg function (e.g. returns a widget)
+(fn* ([line-reader__2681__auto__]
+      (clojure.core/reify org.jline.reader.Widget
+        (clojure.core/apply [___2682__auto__]
+          (rebel-readline.jline-api/widget-exec line-reader__2681__auto__
+                                                (clojure.core/fn [] (do foo)))))))
+
 ;;;;;;;;;;;;;;;;;;;;;Widget copy functions
 
 
