@@ -174,7 +174,7 @@
   []
   (let [s (str j/*buffer*)
         c (.cursor j/*buffer*)
-        [new-s new-c cut-len] (kill s c)
+        [_new-s _new-c cut-len] (kill s c)
         kill-str (subs s c (+ c cut-len))]
     (when (not-empty kill-str)  #_ (re-find #"[^\s]" kill-str) ;;  exclude all whitespace from killRing?
       (j/add-to-killRing kill-str))
