@@ -890,7 +890,7 @@
 (defn bind-paredit-widgets [km-name]
   (doto km-name
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
-    (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp")
+    (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp") ; osx esc-( works but not alt or command (
     (key-binding (str (KeyMap/alt \s)) "paredit-splice")
     (key-binding (str (KeyMap/alt \S)) "paredit-split")
     ;; in linux use "sudo showkey -s" to experiment
@@ -903,6 +903,8 @@
     (key-binding (str (KeyMap/translate "^[^B")) "paredit-backward")          ; windows alt-ctrl-b
     (key-binding (str (KeyMap/translate "^[[C")) "paredit-slurp-forward")      ; osx shift-right-arrow
     (key-binding (str (KeyMap/translate "^[[D")) "paredit-barf-forward")       ; osx shift-left-arrow
+    ;(key-binding (str (KeyMap/translate "^[[1;6C")) "paredit-slurp-forward")   ; osx shift-right-arrow
+    ;(key-binding (str (KeyMap/translate "^[[1;6D")) "paredit-barf-forward")    ; osx shift-left-arrow
     (key-binding (str (KeyMap/translate "^[[1;10D")) "paredit-slurp-backward") ; osx shift-command-arrow
     (key-binding (str (KeyMap/translate "^[[1;10C")) "paredit-barf-backward")  ; osx shift-command-arrow
     ;(key-binding (str (KeyMap/key api/*terminal* InfoCmp$Capability/key_right)) "paredit-slurp-forward") ;; windows is right arrow (no alt or ctrl)
