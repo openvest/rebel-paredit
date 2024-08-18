@@ -1,8 +1,8 @@
-(ns rebel-readline.cljs.main
+(ns repl-balance.cljs.main
   (:require
    [cljs.repl.nashorn :as nash]
-   [rebel-readline.cljs.repl :as cljs-repl]
-   [rebel-readline.core :as core]))
+   [repl-balance.cljs.repl :as cljs-repl]
+   [repl-balance.core :as core]))
 
 ;; TODO need ot bring this in line with cljs.main
 (defn -main [& args]

@@ -1,12 +1,12 @@
-(ns rebel-readline.cljs.repl
+(ns repl-balance.cljs.repl
   (:require
    [cljs.repl]
    [clojure.tools.reader :as r]
    [clojure.tools.reader.reader-types :as rtypes]
-   [rebel-readline.core :as rebel]
-   [rebel-readline.clojure.line-reader :as clj-line-reader]
-   [rebel-readline.cljs.service.local :as cljs-service]
-   [rebel-readline.jline-api :as api])
+   [repl-balance.core :as rebel]
+   [repl-balance.clojure.line-reader :as clj-line-reader]
+   [repl-balance.cljs.service.local :as cljs-service]
+   [repl-balance.jline-api :as api])
   (:import
    [org.jline.utils OSUtils]))
 
@@ -35,8 +35,8 @@
      repl-env
      :prompt (fn [])
      :read (cljs-repl-read
-             (rebel-readline.core/line-reader
-               (rebel-readline-cljs.service/create {:repl-env repl-env}))])))"
+             (repl-balance.core/line-reader
+               (repl-balance-cljs.service/create {:repl-env repl-env}))])))"
   (rebel/create-buffered-repl-reader-fn
    (fn [s] (rtypes/source-logging-push-back-reader
             (java.io.StringReader. s)))
@@ -49,11 +49,11 @@
   This printer respects the current color settings set in the
   service.
 
-  The `rebel-readline.jline-api/*line-reader*` and
-  `rebel-readline.jline-api/*service*` dynamic vars have to be set for
+  The `repl-balance.jline-api/*line-reader*` and
+  `repl-balance.jline-api/*service*` dynamic vars have to be set for
   this to work.
 
-  See `rebel-readline-cljs.main` for an example of how this function is normally used"
+  See `repl-balance-cljs.main` for an example of how this function is normally used"
   [x]
   (binding [*out* (.. api/*line-reader* getTerminal writer)]
     (try

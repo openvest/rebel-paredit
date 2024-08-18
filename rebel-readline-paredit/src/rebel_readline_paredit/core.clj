@@ -1,7 +1,7 @@
-(ns rebel-readline-paredit.core
+(ns repl-balance-paredit.core
   (:require
-   [rebel-readline.tools.indent :as ind])
-  (:use rebel-readline.jline-api)
+   [repl-balance.tools.indent :as ind])
+  (:use repl-balance.jline-api)
   (:import
    [org.jline.keymap KeyMap]
    [org.jline.reader LineReader]
@@ -68,7 +68,7 @@
     (paredit-close-action b)
   b
   )
-  
+
   (list 1
       2
       3)
@@ -134,12 +134,12 @@
       (bind-key "paredit-open-paren"   (str "("))
       (bind-key "paredit-open-brace"   (str "{"))
       (bind-key "paredit-open-bracket" (str "["))
-      
+
       (bind-key "paredit-close"   (str ")"))
       (bind-key "paredit-close"   (str "}"))
       (bind-key "paredit-close"   (str "]"))
 
       ;; TODO backspace
-      
+
       )
   )

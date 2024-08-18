@@ -1,6 +1,6 @@
-(ns rebel-readline-paredit.core-test
+(ns repl-balance-paredit.core-test
   (:require [clojure.test :refer :all]
-            [rebel-readline-paredit.core :refer :all]))
+            [repl-balance-paredit.core :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."

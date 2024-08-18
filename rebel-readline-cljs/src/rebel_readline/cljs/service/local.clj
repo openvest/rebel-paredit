@@ -1,4 +1,4 @@
-(ns rebel-readline.cljs.service.local
+(ns repl-balance.cljs.service.local
   (:require
    [cljs-tooling.complete :as cljs-complete]
    [cljs-tooling.info :as cljs-info]
@@ -11,11 +11,11 @@
    [clojure.string :as string]
    [clojure.tools.reader :as reader]
    [clojure.tools.reader.reader-types :as readers]
-   [rebel-readline.clojure.utils :as clj-utils]
-   [rebel-readline.clojure.line-reader :as clj-reader]
-   [rebel-readline.clojure.service.local :refer [call-with-timeout]]
-   [rebel-readline.tools :as tools]
-   [rebel-readline.utils :refer [log]])
+   [repl-balance.clojure.utils :as clj-utils]
+   [repl-balance.clojure.line-reader :as clj-reader]
+   [repl-balance.clojure.service.local :refer [call-with-timeout]]
+   [repl-balance.tools :as tools]
+   [repl-balance.utils :refer [log]])
   (:import
    [java.util.regex Pattern]))
 
@@ -138,4 +138,4 @@
    (merge clj-reader/default-config
           (tools/user-config)
           options
-          {:rebel-readline.service/type ::service})))
+          {:repl-balance.service/type ::service})))

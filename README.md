@@ -1,17 +1,17 @@
-# rebel-readline
+# repl-balance
 
 <!---
-[![Clojars Project](https://img.shields.io/clojars/v/com.bhauman/rebel-readline.svg)](https://clojars.org/com.bhauman/rebel-readline)
-[![Clojars Project](https://img.shields.io/clojars/v/com.bhauman/rebel-readline-cljs.svg)](https://clojars.org/com.bhauman/rebel-readline-cljs)
---->
+[![Clojars Project](https://img.shields.io/clojars/v/com.openvest/repl-balance.svg)](https://clojars.org)
 
+[![Clojars Project](https://img.shields.io/clojars/v/com.openvest/repl-balance-cljs.svg)](https://clojars.org/com.openvest/repl-balance-cljs)
+--->
 A terminal readline library for Clojure Dialects
 
 [![asciicast](https://asciinema.org/a/160597.png)](https://asciinema.org/a/160597)
 
 ## Why create a terminal readline library?
 
-https://github.com/bhauman/rebel-readline/blob/master/rebel-readline/doc/intro.md
+https://github.com.openvest/repl-balance/blob/master/repl-balance/doc/intro.md
 
 ## Important note!!!
 
@@ -39,7 +39,7 @@ If you want to try this really quickly
 and then invoke this:
 
 ```shell
-clojure -Sdeps "{:deps {com.bhauman/rebel-readline {:mvn/version \"0.1.4\"}}}" -m rebel-readline.main
+clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.1.4\"}}}" -m repl-balance.main
 ```
 
 That should start a Clojure REPL that takes its input from the Rebel readline editor.
@@ -52,39 +52,39 @@ Alternatively you can specify an alias in your `$HOME/.clojure/deps.edn`
 ```clojure
 {
  ...
- :aliases {:rebel {:extra-deps {com.bhauman/rebel-readline {:mvn/version "0.1.4"}}
-                   :main-opts  ["-m" "rebel-readline.main"]}}
+ :aliases {:rebel {:extra-deps {com.openvest/repl-balance {:mvn/version "0.1.4"}}
+                   :main-opts  ["-m" "repl-balance.main"]}}
 }
 ```
 
 And then run with a simpler:
 
 ```shell
-clojure -M:rebel
+$ clojure -A:rebel
 ```
 
 #### Leiningen
 
-Add `[com.bhauman/rebel-readline "0.1.4"]` to the dependencies in your
+Add `[com.openvest/repl-balance "0.1.4"]` to the dependencies in your
 `project.clj` then start a REPL like this:
 
 ```shell
-lein trampoline run -m rebel-readline.main
+lein trampoline run -m repl-balance.main
 ```
 
-Alternatively, you can add rebel-readline globally to `$HOME/.lein/profiles.clj`
+Alternatively, you can add repl-balance globally to `$HOME/.lein/profiles.clj`
 
 ```clojure
 {
  ...
- :user {:dependencies [[com.bhauman/rebel-readline "0.1.4"]]}
+ :user {:dependencies [[com.openvest/repl-balance "0.1.4"]]}
 }
 ```
 
 Then you can call
 
 ```shell
-lein trampoline run -m rebel-readline.main
+lein trampoline run -m repl-balance.main
 ```
 
 To make this less verbose you can use an alias in your `project.clj`:
@@ -92,7 +92,7 @@ To make this less verbose you can use an alias in your `project.clj`:
 ```clojure
 {
  ...
- :aliases {"rebl" ["trampoline" "run" "-m" "rebel-readline.main"]}
+ :aliases {"rebl" ["trampoline" "run" "-m" "repl-balance.main"]}
 }
 ```
 
@@ -101,25 +101,19 @@ Alternatively, you can do this globally in `$HOME/.lein/profiles.clj`:
 ```clojure
 {
  ...
- :user {:aliases {"rebl" ["trampoline" "run" "-m" "rebel-readline.main"]}}
+ :user {:aliases {"rebl" ["trampoline" "run" "-m" "repl-balance.main"]}}
 }
 ```
 
-Now you can start a rebel-readline REPL with `lein rebl`.
-
-#### Boot
-
-```
-boot -d com.bhauman/rebel-readline call -f rebel-readline.main/-main
-```
+Now you can start a repl-balance REPL with `lein rebl`.
 
 #### Clone repo
 
-Clone this repo and then from the `rebel-readline` sub-directory
-typing `lein trampoline run -m rebel-readline.main` will get you into
+Clone this repo and then from the `repl-balance` sub-directory
+typing `lein trampoline run -m repl-balance.main` will get you into
 a Clojure REPL with the readline editor working.
 
-Note that `lein run -m rebel-readline.main` will not work! See above.
+Note that `lein run -m repl-balance.main` will not work! See above.
 
 ## How do I default to vi bindings?
 
@@ -184,15 +178,15 @@ characters you shouldn't be surprised if it doesn't work.
 
 ## Quick Lay of the land
 
-You should look at `rebel-readline.clojure.main` and `rebel-readline.core`
+You should look at `repl-balance.clojure.main` and `repl-balance.core`
 to give you top level usage information.
 
 The core of the functionality is in
-`rebel-readline.clojure.line-reader` everything else is just support.
+`repl-balance.clojure.line-reader` everything else is just support.
 
 ## Quick Usage
 
-These are some quick examples demonstrating how to use the rebel-readline
+These are some quick examples demonstrating how to use the repl-balance
 API.
 
 The main way to utilize this readline editor is to replace the
@@ -206,22 +200,22 @@ REPL loop is reading.
 Example:
 
 ```clojure
-(rebel-readline.core/with-line-reader
-  (rebel-readline.clojure.line-reader/create
-    (rebel-readline.clojure.service.local/create))
+(repl-balance.core/with-line-reader
+  (repl-balance.clojure.line-reader/create
+    (repl-balance.clojure.service.local/create))
   (clojure.main/repl
      :prompt (fn []) ;; prompt is handled by line-reader
-     :read (rebel-readline.clojure.main/create-repl-read)))
+     :read (repl-balance.clojure.main/create-repl-read)))
 ```
 
 Another option is to just wrap a call you your REPL with
-`rebel-readline.core/with-readline-in` this will bind `*in*` to an
+`repl-balance.core/with-readline-in` this will bind `*in*` to an
 input-stream that is supplied by the line reader.
 
 ```clojure
-(rebel-readline.core/with-readline-in
-  (rebel-readline.clojure.line-reader/create
-    (rebel-readline.clojure.service.local/create))
+(repl-balance.core/with-readline-in
+  (repl-balance.clojure.line-reader/create
+    (repl-balance.clojure.service.local/create))
   (clojure.main/repl :prompt (fn[])))
 ```
 
@@ -229,12 +223,12 @@ Or with a fallback:
 
 ```clojure
 (try
-  (rebel-readline.core/with-readline-in
-    (rebel-readline.clojure.line-reader/create
-      (rebel-readline.clojure.service.local/create))
+  (repl-balance.core/with-readline-in
+    (repl-balance.clojure.line-reader/create
+      (repl-balance.clojure.service.local/create))
     (clojure.main/repl :prompt (fn[])))
   (catch clojure.lang.ExceptionInfo e
-    (if (-> e ex-data :type (= :rebel-readline.jline-api/bad-terminal))
+    (if (-> e ex-data :type (= :repl-balance.jline-api/bad-terminal))
       (do (println (.getMessage e))
         (clojure.main/repl))
       (throw e))))
@@ -246,15 +240,15 @@ The line reader provides features like completion, documentation,
 source, apropos, eval and more. The line reader needs a Service to
 provide this functionality.
 
-When you create a `rebel-readline.clojure.line-reader`
+When you create a `repl-balance.clojure.line-reader`
 you need to supply this service.
 
 The more common service is the
-`rebel-readline.services.clojure.local` which uses the
+`repl-balance.services.clojure.local` which uses the
 local clojure process to provide this functionality and its a good
 example of how a service works.
 
-https://github.com/bhauman/rebel-readline/blob/master/rebel-readline/src/rebel_readline/clojure/service/local.clj
+https://github.com.openvest/repl-balance/blob/master/repl-balance/src/rebel_readline/clojure/service/local.clj
 
 In general, it's much better if the service is querying the Clojure process
 where the eventual REPL eval takes place.
@@ -296,19 +290,19 @@ keyword then the line-reader will attempt to interpret it as a command.
 Type `:repl/help` or `:repl` TAB to see a list of available commands.
 
 You can add new commands by adding methods to the
-`rebel-readline.commands/command` multimethod. You can add
+`repl-balance.commands/command` multimethod. You can add
 documentation for the command by adding a method to the
-`rebel-readline.commands/command-doc` multimethod.
+`repl-balance.commands/command-doc` multimethod.
 
 ## CLJS
 
-See https://github.com/bhauman/rebel-readline/tree/master/rebel-readline-cljs
+See https://github.com.openvest/repl-balance/tree/master/repl-balance-cljs
 
 ## nREPL, SocketREPL, pREPL?
 
 Services have not been written for these REPLs yet!!
 
-But you can use the `rebel-readline.clojure.service.simple` service in the meantime.
+But you can use the `repl-balance.clojure.service.simple` service in the meantime.
 
 ## Contributing
 
@@ -329,7 +323,7 @@ If you do contribute:
   exploration of an idea
 
 I'm going to be more open to repairing current behavior than I will be
-to increasing the scope of rebel-readline.
+to increasing the scope of repl-balance.
 
 I will have a preference for creating hooks so that additional functionality
 can be layered on with libraries.
@@ -339,7 +333,7 @@ out to me on the clojurians slack channel.
 
 ## License
 
-Copyright © 2018 Bruce Hauman
+Copyright © 2024 Philip Cooper
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

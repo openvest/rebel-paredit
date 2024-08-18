@@ -2,12 +2,12 @@
   (:require
    [cljs.repl]
    [cljs.repl.nashorn :as nash]
-   [rebel-readline.cljs.repl :as cljs-repl]
-   [rebel-readline.cljs.service.local :as cljs-service]
-   [rebel-readline.clojure.line-reader :as clj-line-reader]
-   [rebel-readline.core :as rebel]
-   [rebel-readline.utils :as utils]
-   [rebel-readline.jline-api :as api]))
+   [repl-balance.cljs.repl :as cljs-repl]
+   [repl-balance.cljs.service.local :as cljs-service]
+   [repl-balance.clojure.line-reader :as clj-line-reader]
+   [repl-balance.core :as rebel]
+   [repl-balance.utils :as utils]
+   [repl-balance.jline-api :as api]))
 
 (defn -main [& args]
     (let [repl-env (nash/repl-env)

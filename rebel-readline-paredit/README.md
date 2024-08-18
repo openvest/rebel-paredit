@@ -1,4 +1,4 @@
-# rebel-readline-paredit
+# repl-balance-paredit
 
 A Clojure library designed to ... well, that part is up to you.
 
