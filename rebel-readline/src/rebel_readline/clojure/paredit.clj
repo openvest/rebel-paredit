@@ -307,8 +307,8 @@
           (str-find-cursor s node-pos)
           ;; if it's at the right move the cursor to one past the left sibling
           (-> loc z/skip-whitespace z/rightmost?)
-          ((-> loc z/skip-whitespace-left z/node meta
-               (#(str-find-cursor s % :at-end))))
+          (-> loc z/skip-whitespace-left z/node meta
+              (#(str-find-cursor s % :at-end)))
           ;; just keep the same cursor
           :default cur)]))))
 

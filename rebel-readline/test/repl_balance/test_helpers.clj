@@ -3,6 +3,9 @@
             [clojure.string :as str]))
 
 (defn split-s-cur
+  "Takes a string with a `|` to indicate the cursor position.
+  Returns the corresponding `[string cursor]` pair.
+  "
   [^String s+c]
   (let [cur (or (str/index-of s+c "|")
                 (throw (ex-info "(with-buffer s ...) missing a | to indicate cursor" {:s s+c})))
@@ -10,14 +13,15 @@
     [s cur]))
 
 (defn ^String join-s-cur
-  "takes a buffer or [str cursor] and returns the string with a | where the cursor is"
+  "Takes a buffer or [str cursor] and returns the string with a | where the cursor is"
   ([buf] (join-s-cur (str buf) (.cursor buf)))
   ([s cur]
    (str (subs s 0 cur) "|" (subs s cur))))
 
+;; can this be a function instead of a macro?
 (defmacro s-cur-test
-  "macro to run the body with jline-api/*buffer* bound to a buffer with the provided string
-  Ths string must include a | to indicate the cursor position"
+  "To test SUT/functions that take `[string cursor]` as arguments.
+  The orig and target are strings that MUST include a | to indicate the cursor position"
   [str-cur-fn orig target]
 
   `(let [[orig-s# orig-cur#] (split-s-cur ~orig)
