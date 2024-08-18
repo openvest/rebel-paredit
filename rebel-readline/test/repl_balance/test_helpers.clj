@@ -28,5 +28,5 @@
          [target-s# target-cur#] (split-s-cur ~target)
          [modified-s# modified-cur#] (~str-cur-fn orig-s# orig-cur#)]
      (testing (str "testing " ~str-cur-fn "  with: "~orig)
-       (is (= target-s# modified-s#))
-       (is (= target-cur# modified-cur#)))))
+       (is (= modified-s# target-s#))
+       (is (= modified-cur# target-cur#)))))
