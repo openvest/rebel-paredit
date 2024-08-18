@@ -895,13 +895,16 @@
     (key-binding (str (KeyMap/alt \S)) "paredit-split")
     ;; in linux use "sudo showkey -s" to experiment
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \F)) "paredit-slurp-forward") ;works
-    (key-binding (str (KeyMap/translate "^[[1;5C")) "paredit-slurp-forward") ; windows ctrl-right-arrow
-    (key-binding (str (KeyMap/translate "^[[1;5D")) "paredit-barf-forward") ; windows ctrl-left-arrow
+    (key-binding (str (KeyMap/translate "^[[1;5C")) "paredit-slurp-forward")  ; windows ctrl-right-arrow
+    (key-binding (str (KeyMap/translate "^[[1;5D")) "paredit-barf-forward")   ; windows ctrl-left-arrow
     (key-binding (str (KeyMap/translate "^[[1;7D")) "paredit-slurp-backward") ; windows alt-ctrl-left-arrow
-    (key-binding (str (KeyMap/translate "^[[1;7C")) "paredit-barf-backward") ; windows alt-ctrl-right-arrow
-    (key-binding (str (KeyMap/translate "^[^F")) "paredit-forward") ; windows alt-ctrl-f
-    (key-binding (str (KeyMap/translate "^[^B")) "paredit-backward") ; windows alt-ctrl-b
-    ;(key-binding (str (KeyMap/translate "[[C")) "paredit-slurp-forward") ;; no luck.  for a different terminal?
+    (key-binding (str (KeyMap/translate "^[[1;7C")) "paredit-barf-backward")  ; windows alt-ctrl-right-arrow
+    (key-binding (str (KeyMap/translate "^[^F")) "paredit-forward")           ; windows alt-ctrl-f
+    (key-binding (str (KeyMap/translate "^[^B")) "paredit-backward")          ; windows alt-ctrl-b
+    (key-binding (str (KeyMap/translate "^[[C")) "paredit-slurp-forward")      ; osx shift-right-arrow
+    (key-binding (str (KeyMap/translate "^[[D")) "paredit-barf-forward")       ; osx shift-left-arrow
+    (key-binding (str (KeyMap/translate "^[[1;10D")) "paredit-slurp-backward") ; osx shift-command-arrow
+    (key-binding (str (KeyMap/translate "^[[1;10C")) "paredit-barf-backward")  ; osx shift-command-arrow
     ;(key-binding (str (KeyMap/key api/*terminal* InfoCmp$Capability/key_right)) "paredit-slurp-forward") ;; windows is right arrow (no alt or ctrl)
     ;(key-binding (str (KeyMap/ctrl (char 0x4D))) "paredit-slurp-forward") ; ctrl-right-arrow
     ))
