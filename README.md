@@ -1,11 +1,8 @@
 # repl-balance
 
-<!---
-[![Clojars Project](https://img.shields.io/clojars/v/com.openvest/repl-balance.svg)](https://clojars.org)
+[![Clojars Project](https://img.shields.io/clojars/v/com.openvest/repl-balance.svg?include_prereleases)](https://clojars.org/com.openvest/repl-balance)
 
-[![Clojars Project](https://img.shields.io/clojars/v/com.openvest/repl-balance-cljs.svg)](https://clojars.org/com.openvest/repl-balance-cljs)
---->
-A terminal readline library for Clojure Dialects
+A terminal readline library for Clojure Dialects.  Forked from rebel-readline this adds paredit fuctionality.
 
 [![asciicast](https://asciinema.org/a/160597.png)](https://asciinema.org/a/160597)
 
@@ -65,7 +62,7 @@ $ clojure -A:rebel
 
 #### Leiningen
 
-Add `[com.openvest/repl-balance "0.1.4"]` to the dependencies in your
+Add `[com.openvest/repl-balance "RELEASE"]` to the dependencies in your
 `project.clj` then start a REPL like this:
 
 ```shell
@@ -77,7 +74,7 @@ Alternatively, you can add repl-balance globally to `$HOME/.lein/profiles.clj`
 ```clojure
 {
  ...
- :user {:dependencies [[com.openvest/repl-balance "0.1.4"]]}
+ :user {:dependencies [[com.openvest/repl-balance "RELEASE"]]}
 }
 ```
 

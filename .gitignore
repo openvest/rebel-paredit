@@ -23,4 +23,7 @@ repl-balance-debug-log
 
 *.log
 .idea
+*.iml
 .cpcache
+
+my_*

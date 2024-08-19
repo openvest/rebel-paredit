@@ -7,18 +7,20 @@
 (def micro-ver(-> (b/process {:command-args (str/split "git rev-list --count master..HEAD" #" +") :out :capture})
                   :out
                   (str/trim)))
-(def minor-ver 1 #_(-> (b/process {:command-args (str/split "git rev-list --count master" #" +") :out :capture})
+(def minor-ver 2 #_(-> (b/process {:command-args (str/split "git rev-list --count master" #" +") :out :capture})
                    :out
                    (str/trim)))
 
 (def lib 'com.openvest/repl-balance)
-(def version (format "0.%s.%s" minor-ver micro-ver))
+(def version (format "0.%s.%s-SNAPSHOT" minor-ver micro-ver))
 (def main 'repl-balance.main)
 (def class-dir "target/classes")
 ;; delay to defer side effects (artifact downloads)
 (def basis (delay (b/create-basis {:project "deps.edn"})))
 
-(defn test "Run all the tests." [opts]
+(defn test
+ "Run all the tests."
+ [opts]
   (let [basis    (b/create-basis {:aliases [:test]})
         cmds     (b/java-command
                   {:basis     basis
@@ -55,12 +57,14 @@
           :src-dirs  ["src"]
           :pom-data  (pom-template version)))
 
+(defn clean [_]
+  (b/delete {:path "target"}))
 
-(defn ci
+(defn jar
   "Run the CI pipeline of tests (and build the JAR)."
   [opts]
   ;(test opts)
-  (b/delete {:path "target"})
+  (clean opts)
   (let [opts (jar-opts opts)]
     (println "\nWriting pom.xml...")
     (b/write-pom opts)
@@ -73,16 +77,20 @@
   opts)
 
 
-(defn install "Install the JAR locally." [opts]
+(defn install
+  "Install the JAR locally."
+  [opts]
   (let [opts (jar-opts opts)]
     (b/install opts))
   opts)
 
-(defn deploy "Deploy the JAR to Clojars." [opts]
+(defn deploy
+  "Deploy the JAR to Clojars."
+  [opts]
   (let [{:keys [jar-file] :as opts} (jar-opts opts)]
     (dd/deploy {:installer :remote :artifact (b/resolve-path jar-file)
                 :pom-file (b/pom-path (select-keys opts [:lib :class-dir]))}))
   opts)
 ;; End of Build configuration
 
-(defn blab [opts] (println "\nopts:") (print opts))
+(defn echo-opts [opts] (println "\nopts:") (print opts))
