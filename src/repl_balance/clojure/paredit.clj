@@ -402,6 +402,25 @@
        (.clear)
        (.write new-s)
        (.cursor cur)))))
+(def rizen (atom {}))
+(defn raise
+  ([] (split j/*buffer*))
+  ([buf]
+   (let [cur (.cursor buf)
+         s   (str buf)
+         pos (str-find-pos s cur)
+         loc (-> s
+                 (z/of-string {:track-position? true})
+                 (z/find-last-by-pos pos))
+         new-s (-> loc
+                   (pe/raise)
+                   (z/root-string))
+         new-cur (str-find-cursor s (-> loc z/up z/node meta))]
+     (swap! rizen assoc :s s :old-node (z/node loc))
+     (doto buf
+       (.clear)
+       (.write new-s)
+       (.cursor new-cur)))))
 
 ;; movement functions
 

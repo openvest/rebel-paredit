@@ -6,12 +6,12 @@
   edge case testing"
   (:require [repl-balance.clojure.paredit :as SUT]
             [repl-balance.core]
-            [repl-balance.test-helpers :refer [s-cur-test]]
+            [repl-balance.test-helpers :refer [s-cur-test buf-test]]
             [clojure.test :refer :all]))
 
 
 ;;;;;;;;;; Basic Insertion Commands ;;;;;;;;;;
-#_(deftest paredit-open-round
+#_(deftest ^:autopair paredit-open-round
   "(a b |c d)"
   "(a b (|) c d)"
 
@@ -19,7 +19,7 @@
   "(foo \"bar (|baz\" quux)"
   )
 
-#_(deftest paredit-close-round
+#_(deftest ^:autopair paredit-close-round
   "(a b |c  )"
   "(a b c)|"
 
@@ -27,14 +27,14 @@
   "; Hello,)| world!"
   )
 
-#_(deftest paredit-close-round-and-newline
+#_(deftest ^:autopair paredit-close-round-and-newline
   "Not sure about this example. It's more lispy than clojure
   Maybe work with square brackets?"
   "(defn f (x|  ))"
   "(defn f (x)\n  |)"
   )
 
-#_(deftest paredit-open-square
+#_(deftest ^:autopair paredit-open-square
 
   "(a b |c d)"
   "(a b [|] c d)"
@@ -44,12 +44,12 @@
 
   )
 
-#_(deftest paredit-close-square
+#_(deftest ^:autopair paredit-close-square
   "(define-key keymap [frob|  ] 'frobnicate)"
   "(define-key keymap [frob]| 'frobnicate)"
   )
 
-#_(deftest paredit-doublequote
+#_(deftest ^:autopair paredit-doublequote
 
   "(frob grovel |full lexical)"
   "(frob grovel \"|\" full lexical)"
@@ -58,7 +58,7 @@
   "(foo \"bar \"|baz\" quux)"
   )
 
-#_(deftest paredit-meta-doublequote
+#_(deftest ^:autopair paredit-meta-doublequote
 
   "(foo \"bar |baz\" quux)"
   "(foo \"bar baz\"| quux)"  ;; emacs behavior
@@ -73,7 +73,6 @@
   )
 
 #_(deftest paredit-comment-dwim
-
   "This is a bit of whose right/choose your own adventure
   paredit-ref-card, emacs and cursive all have different behaviors"
   "(foo |bar)"
@@ -95,7 +94,6 @@
               "(quu| \"zot\")"))
 
 #_(deftest paredit-backward-delete
-
   )
 
 (deftest paredit-kill
@@ -121,19 +119,33 @@
   )
 
 ;;;;;;;;;; Movement & Navigation ;;;;;;;;;;
-#_(deftest paredit-forward
-  )
+(deftest paredit-forward
+  (buf-test SUT/forward
+            "(foo | (bar baz) quux)"
+            "(foo (bar baz) | quux)")
+  (buf-test SUT/forward
+            "(foo (bar) |)"
+            "(foo (bar))) |"))
 
-#_(deftest paredit-backward
-  )
+(deftest paredit-backward
+  (buf-test SUT/backward
+            "(foo (bar baz)| quux)"
+            "(foo |(bar baz) quux)")
+  (buf-test SUT/backward
+            ;; this is emacs behavior, minor diff from ref card
+            "(| (foo) bar)"
+            "|( (foo) bar)"))
 
 ;;;;;;;;;; Depth-Changing Commands ;;;;;;;;;;
-#_(deftest paredit-wrap-round
-  )
+(deftest paredit-wrap-round
+  (buf-test SUT/open-and-slurp
+    "(foo |bar baz)"
+    "(foo (|bar) baz)"))
 
-#_(deftest paredit-splice-sexp
-
-  )
+(deftest paredit-splice-sexp
+  (buf-test SUT/splice
+            "(foo (bar| baz) quux)"
+            "(foo bar| baz quux)"))
 
 #_(deftest paredit-splice-sexp-killing-backward
   )
@@ -141,26 +153,50 @@
 #_(deftest paredit-splice-sexp-killing-forward
   )
 
-#_(deftest paredit-rise-sexp
-
-  )
+(deftest paredit-raise-sexp
+  (buf-test SUT/raise
+            ;; removed a \n here for test output clarity
+            "(dynamic-wind in (fn[] |body) out)"
+            "(dynamic-wind in |body out)"))
 
 ;;;;;;;;;; Barfage & Slurpage ;;;;;;;;;;
-#_(deftest paredit-forward-slurp-sexp
-  )
+(deftest paredit-forward-slurp-sexp
+  (buf-test SUT/slurp-forward
+            "(foo (bar |baz) quux zot)"
+            "(foo (bar |baz quux) zot)")
+  (buf-test SUT/slurp-forward
+            "(a b ((c | d)) e f)"
+            "(a b ((c| d) e) f)"))
 
-#_(deftest paredit-forward-barf-sexp
-  )
+(deftest paredit-forward-barf-sexp
+  (buf-test SUT/barf-forward
+            "(foo (bar |baz quux) zot)"
+            "(foo (bar |baz) quux zot)"))
 
-#_(deftest paredit-backward-slurp-sexp
-  )
+(deftest paredit-backward-slurp-sexp
+  ;; different cursor position than ref card but consistent with emacs
+  (buf-test SUT/slurp-backward
+            "(foo bar (baz| quux) zot)"
+            "(foo (bar baz| quux) zot)")
+  ;; reference card looks wrong targeting "(a (b (c| d) e) f)"
+  (buf-test SUT/slurp-backward
+            "(a b ((c| d)) e f)"
+            "(a (b (c| d)) e f)"))
 
-#_(deftest paredit-backward-barf-sexp
+(deftest paredit-backward-barf-sexp
+  (buf-test SUT/barf-backward
+            "(foo (bar baz |quux) zot)"
+            "(foo bar (baz |quux) zot)")
   )
 
 ;;;;;;;;;; Miscellaneous Commands ;;;;;;;;;;
-#_(deftest paredit-split-sexp
-  )
+(deftest paredit-split-sexp
+  (buf-test SUT/split
+            "(hello| world)"
+            "(hello)| (world)")
+  (buf-test SUT/split
+            "\"Hello, |world!\""
+            "\"Hello, \"| \"world!\""))
 
 #_(deftest paredit-join-sexp
   )

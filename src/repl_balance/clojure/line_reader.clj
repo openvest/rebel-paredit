@@ -520,6 +520,11 @@
     (paredit/splice)
     true))
 
+(def paredit-raise
+  (create-widget
+    (paredit/raise)
+    true))
+
 (def paredit-split
   (create-widget
     (paredit/split)
@@ -869,6 +874,7 @@
     (register-widget "paredit-barf-backward"      paredit-barf-backward)
     (register-widget "paredit-open-and-slurp"     paredit-open-and-slurp)
     (register-widget "paredit-splice"             paredit-splice)
+    (register-widget "paredit-raise"              paredit-raise)
     (register-widget "paredit-split"              paredit-split)
     (register-widget "paredit-forward"            paredit-forward)
     (register-widget "paredit-backward"           paredit-backward)))
@@ -893,6 +899,7 @@
     (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp") ; osx esc-( works but not alt or command (
     (key-binding (str (KeyMap/alt \s)) "paredit-splice")
     (key-binding (str (KeyMap/alt \S)) "paredit-split")
+    (key-binding (str (KeyMap/alt \r)) "paredit-raise")
     ;; in linux use "sudo showkey -s" to experiment
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \F)) "paredit-slurp-forward") ;works
     (key-binding (str (KeyMap/translate "^[[1;5C")) "paredit-slurp-forward")  ; windows ctrl-right-arrow
