@@ -51,7 +51,7 @@
 (defn assert-system-terminal [terminal]
   (when (instance? DumbTerminal terminal)
     (throw (ex-info
-"Unable to detect a system Terminal, you must not launch the Rebel readline
+"Unable to detect a system Terminal, you must not launch the Repl balance
 from an intermediate process.
 If you are using `lein` you may need to use `lein trampoline`."
             {:type ::bad-terminal}))))
@@ -130,20 +130,22 @@ If you are using `lein` you may need to use `lein trampoline`."
 
 (defn key-map->display-data [key-map]
   (->> (key-map->clj key-map)
-       (map (fn [[k v]] [(KeyMap/display k) (.name v)]))
+       (map (fn [[k v]] [(KeyMap/display k)
+                         (try (.name v) (catch Exception e nil))]))
        (filter
         (fn [[k v]]
-          (not
-           (#{;; these don't exist for some reason
-              "character-search"
-              "character-search-backward"
-              "infer-next-history"
-              ;; these are too numerous
-              ;; TODO would be nice to display
-              ;; rolled up abbreviations
-              "self-insert"
-              "digit-argument"
-              "do-lowercase-version"} v))))))
+          (and (some? v)  ;; why is "beep" not returning a ".name"
+               (not
+                 (#{;; these don't exist for some reason
+                    "character-search"
+                    "character-search-backward"
+                    "infer-next-history"
+                    ;; these are too numerous
+                    ;; TODO: roll up bindings for paredit and autopair
+                    ;;       into groupings (link the clojure bindings)
+                    "self-insert"
+                    "digit-argument"
+                    "do-lowercase-version"} v)))))))
 
 (defn key-maps []
   (-> *line-reader* (.getKeyMaps)))
@@ -324,7 +326,7 @@ If you are using `lein` you may need to use `lein trampoline`."
   (let [service-variable-name (str ::service)]
     (proxy [LineReaderImpl clojure.lang.IDeref clojure.lang.IAtom]
         [terminal
-         (or app-name "Rebel Readline")
+         (or app-name "repl-balance")
          (java.util.HashMap. {service-variable-name (atom (or service {}))})]
       (selfInsert []
         (when-let [hooks (not-empty (:self-insert-hooks @this))]

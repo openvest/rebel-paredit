@@ -98,7 +98,7 @@
              (update-in [:key-bindings] translate-serialized-key-bindings)))
          (catch Throwable e
            (binding [*out* *err*]
-             (println (format "[Rebel Readline] Error reading config file %s: %s"
+             (println (format "[Repl Balance] Error reading config file %s: %s"
                               (str file)
                               (.getMessage e))))))))
 

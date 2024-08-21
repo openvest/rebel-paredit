@@ -9,7 +9,6 @@
             [repl-balance.test-helpers :refer [s-cur-test buf-test]]
             [clojure.test :refer :all]))
 
-
 ;;;;;;;;;; Basic Insertion Commands ;;;;;;;;;;
 #_(deftest ^:autopair paredit-open-round
   "(a b |c d)"
@@ -41,7 +40,6 @@
 
   "(foo \"bar |baz\" quux)"
   "(foo \"bar [|baz\" quux)"
-
   )
 
 #_(deftest ^:autopair paredit-close-square
@@ -75,7 +73,14 @@
 #_(deftest paredit-comment-dwim
   "This is a bit of whose right/choose your own adventure
   paredit-ref-card, emacs and cursive all have different behaviors"
-  "(foo |bar)"
+  "(foo |bar) ; baz"
+  "(foo bar) ; |baz"
+
+  "(frob grovel)|"
+  "(frob grovel) ;|"
+
+  "|(defun hello-world ...)"
+  ";;; |\n  (defun hello-world ...)"
   )
 
 #_(deftest paredit-newline
@@ -88,12 +93,37 @@
 ;;;;;;;;;; Deleting & Killing ;;;;;;;;;;
 
 #_(deftest paredit-forward-delete
-    ;; FIXME: not kill this should be forward delete character
-  (s-cur-test SUT/kill
+  (s-cur-test SUT/paredit-delete-forward
               "(quu|x \"zot\")"
-              "(quu| \"zot\")"))
+              "(quu| \"zot\")"
 
-#_(deftest paredit-backward-delete
+              "(quux |\"zot\")"
+              "(quux \"|zot\")"
+
+              "(quux \"|zot\")"
+              "(quux \"|ot\")"
+
+              "(foo (|) bar)"
+              "(foo | bar)"
+
+              "|(foo bar)"
+              "(|foo bar)"))
+
+#_(deftest paredit-delete-backward
+    "(\"zot\" q|uux)"
+    "(\"zot\" |uux)"
+
+    "(\"zot\"| quux)"
+    "(\"zot|\" quux)"
+
+    "(\"zot|\" quux)"
+    "(\"zo|\" quux)"
+
+    "(foo (|) bar)"
+    "(foo | bar)"
+
+    "(foo bar)|"
+    "(foo bar|)"
   )
 
 (deftest paredit-kill
@@ -119,6 +149,7 @@
   )
 
 ;;;;;;;;;; Movement & Navigation ;;;;;;;;;;
+
 (deftest paredit-forward
   (buf-test SUT/forward
             "(foo | (bar baz) quux)"
@@ -137,6 +168,7 @@
             "|( (foo) bar)"))
 
 ;;;;;;;;;; Depth-Changing Commands ;;;;;;;;;;
+
 (deftest paredit-wrap-round
   (buf-test SUT/open-and-slurp
     "(foo |bar baz)"
@@ -160,6 +192,7 @@
             "(dynamic-wind in |body out)"))
 
 ;;;;;;;;;; Barfage & Slurpage ;;;;;;;;;;
+
 (deftest paredit-forward-slurp-sexp
   (buf-test SUT/slurp-forward
             "(foo (bar |baz) quux zot)"
@@ -190,6 +223,7 @@
   )
 
 ;;;;;;;;;; Miscellaneous Commands ;;;;;;;;;;
+
 (deftest paredit-split-sexp
   (buf-test SUT/split
             "(hello| world)"
@@ -199,6 +233,14 @@
             "\"Hello, \"| \"world!\""))
 
 #_(deftest paredit-join-sexp
+    "(hello)| (world)"
+    "(hello| world)"
+
+    "\"Hello, \"| \"world!\""
+    "\"Hello, |world!\""
+
+    "hello-\n    | world"
+    "hello-|world"
   )
 
 #_(deftest paredit-recentre-on-sexp

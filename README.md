@@ -36,10 +36,10 @@ If you want to try this really quickly
 and then invoke this:
 
 ```shell
-clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.1.4\"}}}" -m repl-balance.main
+clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.2.43-SNAPSHOT\"}}}" -m repl-balance.main
 ```
 
-That should start a Clojure REPL that takes its input from the Rebel readline editor.
+That should start a Clojure REPL that takes its input from the ReplBalance readline editor.
 
 Note that I am using the `clojure` command and not the `clj` command
 because the latter wraps the process with another readline program (rlwrap).
@@ -49,20 +49,20 @@ Alternatively you can specify an alias in your `$HOME/.clojure/deps.edn`
 ```clojure
 {
  ...
- :aliases {:rebel {:extra-deps {com.openvest/repl-balance {:mvn/version "0.1.4"}}
-                   :main-opts  ["-m" "repl-balance.main"]}}
+ :aliases {:repl/balance {:extra-deps {com.openvest/repl-balance {:mvn/version "0.2.43-SNAPSHOT"}}
+                          :main-opts  ["-m" "repl-balance.main"]}}
 }
 ```
 
 And then run with a simpler:
 
 ```shell
-$ clojure -A:rebel
+$ clojure -M:repl/balance
 ```
 
 #### Leiningen
 
-Add `[com.openvest/repl-balance "RELEASE"]` to the dependencies in your
+Add `[com.openvest/repl-balance "0.2.43-SNAPSHOT"]` to the dependencies in your
 `project.clj` then start a REPL like this:
 
 ```shell

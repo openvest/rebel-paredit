@@ -80,7 +80,7 @@
   "Returns a help message to print before enguaging the
   readline. Helpful for repl development."
   []
-  "[Rebel readline] Type :repl/help for online help info")
+  "[Repl balance] Type :repl/help for online help info")
 
 (defn read-line-opts
   "Like read-line, but allows overriding of the LineReader prompt, buffer, and mask parameters.

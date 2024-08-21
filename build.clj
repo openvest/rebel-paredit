@@ -4,7 +4,7 @@
             [deps-deploy.deps-deploy :as dd]
             [clojure.string :as str]))
 
-(def micro-ver(-> (b/process {:command-args (str/split "git rev-list --count master..HEAD" #" +") :out :capture})
+(def micro-ver 43 #_(-> (b/process {:command-args (str/split "git rev-list --count master..HEAD" #" +") :out :capture})
                   :out
                   (str/trim)))
 (def minor-ver 2 #_(-> (b/process {:command-args (str/split "git rev-list --count master" #" +") :out :capture})

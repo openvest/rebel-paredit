@@ -402,6 +402,7 @@
        (.clear)
        (.write new-s)
        (.cursor cur)))))
+
 (def rizen (atom {}))
 (defn raise
   ([] (split j/*buffer*))

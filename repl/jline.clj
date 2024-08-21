@@ -93,7 +93,7 @@
   (let [service-variable-name (str ::service)]
     (proxy [LineReaderImpl clojure.lang.IDeref clojure.lang.IAtom]
         [terminal
-         (or app-name "Rebel Readline")
+         (or app-name "Repl balance")
          (java.util.HashMap. {service-variable-name (atom (or service {}))})]
       (selfInsert []
         ;; no widget-exec yet

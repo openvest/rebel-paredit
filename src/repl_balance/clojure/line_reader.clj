@@ -901,7 +901,6 @@
     (key-binding (str (KeyMap/alt \S)) "paredit-split")
     (key-binding (str (KeyMap/alt \r)) "paredit-raise")
     ;; in linux use "sudo showkey -s" to experiment
-    (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \F)) "paredit-slurp-forward") ;works
     (key-binding (str (KeyMap/translate "^[[1;5C")) "paredit-slurp-forward")  ; windows ctrl-right-arrow
     (key-binding (str (KeyMap/translate "^[[1;5D")) "paredit-barf-forward")   ; windows ctrl-left-arrow
     (key-binding (str (KeyMap/translate "^[[1;7D")) "paredit-slurp-backward") ; windows alt-ctrl-left-arrow
