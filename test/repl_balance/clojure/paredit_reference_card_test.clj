@@ -79,8 +79,8 @@
   "(frob grovel)|"
   "(frob grovel) ;|"
 
-  "|(defun hello-world ...)"
-  ";;; |\n  (defun hello-world ...)"
+  "|(defn hello-world ...)"
+  ";;; |\n  (defn hello-world ...)"
   )
 
 #_(deftest paredit-newline
@@ -135,9 +135,10 @@
               "(|)  ;; Useless Comment")
   (s-cur-test SUT/kill
               "|(foo bar)  ;; Useless Line"
-              "|")
+              "|"))
+
+(deftest paredit-kill-in-string
   ;; FIXME: breaking and breaks balance.
-  ;;       Also is the buffer and string behavior different?
   (s-cur-test SUT/kill
               "(foo \"|bar baz\"\n     quux)"
               "(foo \"|\"\n     quux)"))
@@ -152,11 +153,11 @@
 
 (deftest paredit-forward
   (buf-test SUT/forward
-            "(foo | (bar baz) quux)"
-            "(foo (bar baz) | quux)")
+            "(foo |(bar baz) quux)"
+            "(foo (bar baz)| quux)")
   (buf-test SUT/forward
-            "(foo (bar) |)"
-            "(foo (bar))) |"))
+            "(foo (bar)|)"
+            "(foo (bar))|"))
 
 (deftest paredit-backward
   (buf-test SUT/backward
@@ -174,7 +175,7 @@
     "(foo |bar baz)"
     "(foo (|bar) baz)"))
 
-(deftest paredit-splice-sexp
+(deftest ^:cursor-pos paredit-splice-sexp
   (buf-test SUT/splice
             "(foo (bar| baz) quux)"
             "(foo bar| baz quux)"))
@@ -193,7 +194,7 @@
 
 ;;;;;;;;;; Barfage & Slurpage ;;;;;;;;;;
 
-(deftest paredit-forward-slurp-sexp
+(deftest ^:whitespace paredit-forward-slurp-sexp
   (buf-test SUT/slurp-forward
             "(foo (bar |baz) quux zot)"
             "(foo (bar |baz quux) zot)")
@@ -224,7 +225,7 @@
 
 ;;;;;;;;;; Miscellaneous Commands ;;;;;;;;;;
 
-(deftest paredit-split-sexp
+(deftest ^:cursor-pos paredit-split-sexp
   (buf-test SUT/split
             "(hello| world)"
             "(hello)| (world)")

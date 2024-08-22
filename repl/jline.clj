@@ -36,7 +36,7 @@
 
 ;; not sure how to best reflect on java class methods
 ;; rough cut: (TODO: find a good library or reference)
-(defn methods [thing]
+(defn jmethods [thing]
   (->> (reflect thing)
        :members
        (filter (comp :public :flags))
