@@ -160,9 +160,9 @@
       (if (and (= :token (n/tag node))
                (= :string (.node_type node)))
         (let [new-s (-> loc
-                        (z/edit (comp #(subs (str %) 0 (- (:col cur-pos) (:col node-pos)))))
+                        (z/edit (comp #(subs (str %) 0 (- (:col cur-pos) (:col node-pos) 1))))
                         z/root-string)]
-          [new-s c (dec (- (:end-col node-pos) (:end-col cur-pos)))])
+          [new-s c (- (:end-col node-pos) (:end-col cur-pos))])
         (let [remove? (fn [loc]
                         (let [n (-> loc z/node)]
                           (and (not= :newline (n/tag n))
@@ -170,7 +170,7 @@
           (let [new-s (if (= (:row node-pos) (:row cur-pos))
                         (-> loc
                             (rczu/remove-right-while remove?)
-                            (z/remove)
+                            (z/remove*)
                             (z/root-string))
                         (-> loc
                             (rczu/remove-right-while remove?)
