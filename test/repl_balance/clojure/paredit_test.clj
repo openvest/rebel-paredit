@@ -147,11 +147,16 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
-(deftest kill-space-string-test
+(deftest kill-space-string-test2
   "some kills without space before the string"
   (s-cur-test SUT/kill
               "(foo |\"bar\")"
               "(foo |)"))
+
+(deftest ^:balance-error kill-space-string-test3
+  (s-cur-test SUT/kill
+              "(fo|o \"bar\")"
+              "(fo|)"))
 
 (deftest kill-space-string2-test
   "some kills with a space "

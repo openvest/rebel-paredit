@@ -129,6 +129,34 @@
               (recur inside)
               (assoc l :inner-cursor (- target-cursor cursor)))))))))
 
+(defmulti truncate-node
+          "if we are inside a string, symbol or whitespace,
+          truncate the node to the specified length"
+          (fn [v _length]
+            (cond
+              (string? v) :string
+              (symbol? v) :symbol
+              (re-matches #"\s*" v) :whitespace)))
+
+(defmethod truncate-node :symbol
+  [node length]
+  (-> node str (subs 0 length) symbol n/coerce))
+
+(defmethod truncate-node :string
+  [node length]
+  (-> node (subs 0 length) n/coerce))
+
+(defmethod truncate-node [:whitespace :whitespace]
+  [_node length]
+  (n/spaces length))
+
+#_(defmethod truncate-node [:token :token]
+  [node length]
+  (cond
+    (int? (n/sexpr n)) 3
+    (float? (n/sexpr n)) 3.14
+    :default (assert false "not implimented")))
+
 ;; buffer based functions
 ;; killing
 
@@ -167,14 +195,15 @@
                         (let [n (-> loc z/node)]
                           (and (not= :newline (n/tag n))
                                (-> loc z/node meta :row (= (:row cur-pos ))))))]
-          (let [new-s (if (= (:row node-pos) (:row cur-pos))
+          (let [new-s (if (and (= (:row node-pos) (:row cur-pos))
+                               (= (:col node-pos) (:col cur-pos)))
                         (-> loc
                             (rczu/remove-right-while remove?)
                             (z/remove*)
                             (z/root-string))
                         (-> loc
                             (rczu/remove-right-while remove?)
-                            (z/replace (n/spaces (- (:col cur-pos) (:col node-pos))))
+                            (z/edit #(truncate-node % (- (:col cur-pos) (:col node-pos))))
                             (z/root-string)))]
             [new-s c (- (count s) (count new-s))]))))))
 
