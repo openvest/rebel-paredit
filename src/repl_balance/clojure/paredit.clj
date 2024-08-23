@@ -146,16 +146,16 @@
   [node length]
   (-> node (subs 0 length) n/coerce))
 
-(defmethod truncate-node [:whitespace :whitespace]
+(defmethod truncate-node :whitespace
   [_node length]
   (n/spaces length))
 
-#_(defmethod truncate-node [:token :token]
-  [node length]
+(defn truncate [loc len]
   (cond
-    (int? (n/sexpr n)) 3
-    (float? (n/sexpr n)) 3.14
-    :default (assert false "not implimented")))
+    (z/sexpr-able? loc) (z/edit loc #(truncate-node % len))
+    (= :whitespace (z/tag loc)) (z/replace loc (n/spaces len))
+    :default (do (println "can't truncate " (z/node loc))
+                 loc)))
 
 ;; buffer based functions
 ;; killing
@@ -203,7 +203,7 @@
                             (z/root-string))
                         (-> loc
                             (rczu/remove-right-while remove?)
-                            (z/edit #(truncate-node % (- (:col cur-pos) (:col node-pos))))
+                            (truncate (- (:col cur-pos) (:col node-pos)))
                             (z/root-string)))]
             [new-s c (- (count s) (count new-s))]))))))
 
