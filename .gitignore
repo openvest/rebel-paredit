@@ -25,5 +25,6 @@ repl-balance-debug-log
 .idea
 *.iml
 .cpcache
-
+.lsp
+.clj-kondo
 my_*

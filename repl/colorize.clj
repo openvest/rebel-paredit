@@ -40,3 +40,12 @@ repl-balance.tools/colorize
           (#(repl-balance.tools/highlight-tokens repl-balance.tools/color % s))
           ;(repl-balance.jline-api.attributed-string/->ansi-256)
           (j/->ansi)))
+
+;; print something in red
+(-> (repl-balance.tools/highlight-tokens
+      repl-balance.tools/color
+      [["_" 12 15 :widget/error]]
+      "Autopair is OFF")
+    (j/->ansi )
+    print )
+

@@ -60,6 +60,6 @@
     (let [modified-s# (str buffer#)
           modified-cur# (.cursor buffer#)]
       (testing (str "testing " (name '~buf-fn) " with: "~orig)
-        (is (= modified-s# target-s#))
-        (is (= modified-cur# target-cur#))))))
+        (is (= target-s# modified-s#))
+        (is (= target-cur# modified-cur#))))))
 

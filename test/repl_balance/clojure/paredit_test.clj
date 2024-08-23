@@ -5,7 +5,7 @@
             [rewrite-clj.zip :as z]
             [clojure.string :as str]
             [clojure.test :refer :all]
-            [repl-balance.test-helpers :refer [split-s-cur join-s-cur]])
+            [repl-balance.test-helpers :refer [split-s-cur join-s-cur s-cur-test]])
   (:import [org.jline.reader.impl LineReaderImpl BufferImpl]))
 
 ;; items marked ^:wip are work in progress where non error returns are produced
@@ -138,7 +138,7 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
-(deftest ^:wip kill-space-string-test
+(deftest ^:whitespace kill-space-string-test
   "some kills with a space before the string"
   ; seems to fail with one space before the double-quote char
   (let [[beg-str beg-cur] (split-s-cur "(foo | \"bar\")")
@@ -146,6 +146,17 @@
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
+
+(deftest kill-space-string-test2
+  "some kills without space before the string"
+  (s-cur-test SUT/kill
+              "(foo |\"bar\")"
+              "(foo |)"))
+
+(deftest ^:balance-error kill-space-string-test3
+  (s-cur-test SUT/kill
+              "(fo|o \"bar\")"
+              "(fo|)"))
 
 (deftest kill-space-string2-test
   "some kills with a space "
@@ -188,7 +199,7 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
-(deftest kill-inside-whitespace-test
+(deftest ^:whitespace kill-inside-whitespace-test
   "kill inside a whitespace node"
   (let [[beg-str beg-cur] (split-s-cur "[1 2  |   3]")
         [new-str new-cur] (split-s-cur "[1 2  |]")
@@ -198,11 +209,15 @@
 
 (deftest ^:balance-error kill-inside-string-literal-test
   "kill inside a string"
-  (let [[beg-str beg-cur] (split-s-cur "[:a \"some| string\"]")
-        [new-str new-cur] (split-s-cur "[:a \"some|\"]")
-        [end-str end-cur] (SUT/kill beg-str beg-cur)]
-    (is (= new-str end-str))
-    (is (= new-cur end-cur))))
+  (s-cur-test SUT/kill
+              "[:a \"some| string\"]"
+              "[:a \"some|\"]"))
+
+(deftest ^:balance-error kill-short-empty-test
+  "kill inside a string"
+  (s-cur-test SUT/kill
+              "(|)"
+              "(|)"))
 
 (deftest kill-sym-test
   "kill inside a sym"
@@ -244,25 +259,43 @@
   cursive keeps the cursor inside the vector and compresses extra spaces
   this also makes cursive able to barf multiple times by repeating"
   ; TODO: this causes an invalid sexp
-  (testing "barf-forward from : [1 |123]"
+  (testing "barf-forward"
     (with-buffer
       #_>>>> "[1 |123]"
-      (is (= "[1] |123"
+      (is (= "[1|] 123"
              (-> (SUT/barf-forward)
-                 (join-s-cur)))))))
+                 (join-s-cur)))))
+    (with-buffer
+      #_>>>> "[1 123|]"
+      (is (= "[1|] 123"
+             (-> (SUT/barf-forward)
+                 (join-s-cur)))))
+    (with-buffer
+      #_>>>> "[|]"
+      (is (= "[|]"
+             (-> (SUT/barf-forward)
+                 (join-s-cur)))))
+    (with-buffer
+      #_>>>> "[[1   |  123]]"
+      (is (= "[[1|] 123]"
+             (-> (SUT/barf-forward)
+                 (join-s-cur)))))
+    ))
 
-(deftest barf-forward-str-node-test
+(deftest ^:cursor-pos barf-forward-str-node-test
   "rewrite-clj compresses spaces
   Note: emacs and intellij have different behavior"
   (testing "barf-forward-str from : [[1  |   123]]"
     (let [[s cur]
           (split-s-cur
-            "[[1   |  123]]")]
-      (is (= "[[1|] 123]"
-             (->> (SUT/barf-forward-str s cur)
-                  (apply join-s-cur)))))))
+             "[[1   |  123]]")]
+      (is (= (->> (SUT/barf-forward-str s cur)
+                  (apply join-s-cur))
+             "[[1|] 123]")))))
 
 (deftest barf-forward-str-repl-test
+  "does not test 'correctness' only that no error is throw.
+  But it does it for every cursor position!"
   (let [s "[1 [:a :b :see] :z]"]
     (doall (for  [c (range (count s))]
              (let [orig (join-s-cur s c)

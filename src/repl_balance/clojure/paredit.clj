@@ -73,6 +73,29 @@
   [z]
   ((loc->position* z) z))
 
+(defn coll-end? [loc pos]
+  "for a locator and a position (e.g. position of a cursor)
+  check whither position is at the `tail`.
+  `tail` here means part of the collection but after the last child"
+  (let [node (z/node loc)
+        node-pos (meta node)]
+    (and (#{:vector :set :list :map :forms} (-> node n/tag))
+         (= (:end-row pos) (:end-row node-pos))
+         (= (:end-col pos) (:end-col node-pos))
+         loc)))
+
+(defn movement
+  "helper function that applies movements to a locator
+  like using -> but is usable like
+  `(condp movement loc
+    [z/down z/right] [:some return]
+    [z/down z/down] :>> #(do-something-with-result %))`
+  short-circuits on first `nil`"
+  [movements loc]
+  (reduce (fn [loc move] (or (move loc) (reduced nil)))
+          loc
+          movements))
+
 (defn find-loc [loc target-cursor]
   "given a zipper/loc with {:track-position true}
   and a cursor (offset into the root-string)
@@ -106,6 +129,34 @@
               (recur inside)
               (assoc l :inner-cursor (- target-cursor cursor)))))))))
 
+(defmulti truncate-node
+          "if we are inside a string, symbol or whitespace,
+          truncate the node to the specified length"
+          (fn [v _length]
+            (cond
+              (string? v) :string
+              (symbol? v) :symbol
+              (re-matches #"\s*" v) :whitespace)))
+
+(defmethod truncate-node :symbol
+  [node length]
+  (-> node str (subs 0 length) symbol n/coerce))
+
+(defmethod truncate-node :string
+  [node length]
+  (-> node (subs 0 length) n/coerce))
+
+(defmethod truncate-node :whitespace
+  [_node length]
+  (n/spaces length))
+
+(defn truncate [loc len]
+  (cond
+    (z/sexpr-able? loc) (z/edit loc #(truncate-node % len))
+    (= :whitespace (z/tag loc)) (z/replace loc (n/spaces len))
+    :default (do (println "can't truncate " (z/node loc))
+                 loc)))
+
 ;; buffer based functions
 ;; killing
 
@@ -117,7 +168,7 @@
   (cond
     ; if we currently end on a closing bracket or quote, do nothing
     (or (= c (count s))
-        (#{\) \} \] \"} (.charAt s (inc c))))
+        (#{\) \} \] \"} (.charAt s c)))
     [s c 0]
     ; if we currently at a line ending, remove it
     (#{\newline} (.charAt s c))
@@ -129,46 +180,32 @@
     ;; everything else is handled by rewrite-clj
     :default
     (let [cur-pos (str-find-pos s c)
-          cur-beg-col (:col cur-pos)
-          cur-beg-row (:row cur-pos)
           loc (-> s
                   (z/of-string {:track-position? true})
                   (z/find-last-by-pos cur-pos))
-          remove? (fn [loc]
-                    (let [n (-> loc z/node)]
-                      (and (not= :newline (n/tag n))
-                           (-> loc z/node meta :row (= cur-beg-row)))))
-          new-s (cond                                     ;; should this be a multifun
-                  ;; truncate a token and remove until end of line
-                  (-> loc z/node n/tag #{:token :list :vector :set})
-                  (let [node-beg-col (-> loc z/node meta :col)]
-                    (if (= node-beg-col cur-beg-col)
-                      (-> loc
-                          (rczu/remove-right-while remove?)
-                          (z/remove*)
-                          (z/root-string))
-                      (-> loc
-                          (rczu/remove-right-while remove?)
-                          (z/edit (comp symbol
-                                        #(subs % 0 (- cur-beg-col node-beg-col))
-                                        str))
-                          (z/root-string))))
-                  ;; truncate a whitespace node and remove until end of line
-                  (-> loc z/node n/tag #{:whitespace})
-                  (let [node-beg-col (-> loc z/node meta :col)]
-                    (if (= node-beg-col cur-beg-col)
-                      (-> loc
-                          (rczu/remove-right-while remove?)
-                          (z/remove)
-                          (z/root-string))
-                      (-> loc
-                          (rczu/remove-right-while remove?)
-                          (z/replace (n/spaces (- cur-beg-col node-beg-col)))
-                          (z/root-string))))
-
-                  :default #_(-> loc z/node n/tag #{:token})
-                  (z/root-string loc))]
-      [new-s c (- (count s) (count new-s))])))
+          node (-> loc z/node)
+          node-pos (meta node)]
+      (if (and (= :token (n/tag node))
+               (= :string (.node_type node)))
+        (let [new-s (-> loc
+                        (z/edit (comp #(subs (str %) 0 (- (:col cur-pos) (:col node-pos) 1))))
+                        z/root-string)]
+          [new-s c (- (:end-col node-pos) (:end-col cur-pos))])
+        (let [remove? (fn [loc]
+                        (let [n (-> loc z/node)]
+                          (and (not= :newline (n/tag n))
+                               (-> loc z/node meta :row (= (:row cur-pos ))))))]
+          (let [new-s (if (and (= (:row node-pos) (:row cur-pos))
+                               (= (:col node-pos) (:col cur-pos)))
+                        (-> loc
+                            (rczu/remove-right-while remove?)
+                            (z/remove*)
+                            (z/root-string))
+                        (-> loc
+                            (rczu/remove-right-while remove?)
+                            (truncate (- (:col cur-pos) (:col node-pos)))
+                            (z/root-string)))]
+            [new-s c (- (count s) (count new-s))]))))))
 
 (defn kill-in-buff
   []
@@ -234,29 +271,36 @@
    (let [cur (.cursor buf)
          s (str buf)
          pos (str-find-pos s cur)
-         tail (-> s
-                  (z/of-string {:track-position? true})
-                  (z/find-last-by-pos pos)
-                  (pe/barf-forward)
-                  (z/root-string)
-                  (subs cur))]
+         loc (-> s
+                 (z/of-string {:track-position? true})
+                 (z/find-last-by-pos pos)
+                 (z/skip-whitespace))
+         new-s (if (coll-end? loc pos)
+                 (if-let [barfee (-> loc z/down z/rightmost)]
+                   (->> barfee pe/barf-forward z/root-string)
+                   s)
+                 (->> loc pe/barf-forward z/root-string))
+         new-cur (condp movement loc
+                   ;; at tail with multiple children
+                   [#(coll-end? % pos) z/down z/rightmost z/left]
+                   :>> #(dec (str-find-cursor s (-> % z/node meta) :at-end))
+                   ;; at tail with one child or no children
+                   [#(coll-end? % pos)]
+                   cur
+                   ;; inside at the last child
+                   [z/rightmost?]
+                   (if-let [left-sib (z/left loc)]
+                     (dec (str-find-cursor s (-> left-sib z/node meta) :at-end))
+                     (inc (str-find-cursor s pos)))
+                   ;; inside with a right sibling, no cursor change
+                   []
+                   cur)]
      (doto buf
-       (.write tail)
-       (.delete (- (.length buf)
-                   (.cursor buf)))
-       (.cursor cur)))))
+       (.clear)
+       (.write new-s)
+       (.cursor new-cur)))))
 
-(defn movement
-  "helper function that applies movements to a locator
-  like using -> but is usable like
-  `(condp movement loc
-    [z/down z/right] [:some return]
-    [z/down z/down] :>> #(do-something-with-result %))`
-  short-circuits on first `nil`"
-  [movements loc]
-  (reduce (fn [loc move] (or (move loc) (reduced nil)))
-          loc
-          movements))
+
 
 (defn wrap-loc
   "helper to allow calling a method that takes [str cur]
@@ -280,9 +324,7 @@
          loc (z/find-last-by-pos z cur-pos)
          node (z/node loc)
          node-pos (meta node)]
-     (if (and (-> node n/tag #{:map :list :vector :set :forms})
-              (= ((juxt :end-row :end-col) cur-pos)
-                 ((juxt :end-row :end-col) node-pos)))
+     (if (coll-end? loc cur-pos)
        ;; the cursor is on the end of a collection (i.e. at the end delimiter)
        ;; zipper edge case so lots of logic here :-(
        (condp movement loc
@@ -366,7 +408,7 @@
 ;; splice and split
 
 (defn splice
-  "splice the list/vect"
+  "splice the list/vector"
   ([] (splice j/*buffer*))
   ([buf]
    (let [cur (.cursor buf)
@@ -387,7 +429,7 @@
        (.cursor cur)))))
 
 (defn split
-  "split the list/vect"
+  "split the list/vector"
   ([] (split j/*buffer*))
   ([buf]
    (let [cur (.cursor buf)
@@ -396,6 +438,7 @@
          new-s (-> s
                    (z/of-string {:track-position? true})
                    (z/find-last-by-pos pos)
+                   ;(z/skip-whitespace)
                    (pe/split-at-pos pos)
                    (z/root-string))]
      (doto buf
@@ -403,7 +446,7 @@
        (.write new-s)
        (.cursor cur)))))
 
-(def rizen (atom {}))
+(def risen (atom {}))
 (defn raise
   ([] (split j/*buffer*))
   ([buf]
@@ -417,7 +460,7 @@
                    (pe/raise)
                    (z/root-string))
          new-cur (str-find-cursor s (-> loc z/up z/node meta))]
-     (swap! rizen assoc :s s :old-node (z/node loc))
+     (swap! risen assoc :s s :old-node (z/node loc))
      (doto buf
        (.clear)
        (.write new-s)
