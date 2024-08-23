@@ -153,6 +153,12 @@
               "(foo |\"bar\")"
               "(foo |)"))
 
+(deftest kill-end-of-root-test
+  "some kills without space before the string"
+  (s-cur-test SUT/kill
+              "(|)"
+              "(|)"))
+
 (deftest ^:balance-error kill-space-string-test3
   (s-cur-test SUT/kill
               "(fo|o \"bar\")"
@@ -408,13 +414,13 @@
 ;; if this is worthwhile, it should be baked into a macro
 ;; assumes the SUT is the module being tested
 ;; look at the test reporting facilities in clojure or kaocha as a better alternative
-(deftest ^:movement ^:wip forward-newline-test
+(deftest forward-newline-test
   (with-buffer
     #_>>>> "[x|\n]"
     (is (= "[x\n]|"
            (try
-             (-> (SUT/forward "[x\n]" 2)
-                 first)
+             (->> (SUT/forward "[x\n]" 2)
+                  (join-s-cur  "[x\n]"))
              (catch Exception e (-> e
                                     Throwable->map
                                     (update :trace

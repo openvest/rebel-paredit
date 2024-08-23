@@ -479,9 +479,8 @@
      (let [cursor-pos (str-find-pos s cur)
            loc (-> s
                    (z/of-string {:track-position? true})
-                   (z/find-last-by-pos cursor-pos)
-                   (z/skip-whitespace))
-           node-pos (-> loc
+                   (z/find-last-by-pos cursor-pos))
+           node-pos (-> (or (z/skip-whitespace loc) (z/up loc))
                         z/node
                         meta)]
        (str-find-cursor s

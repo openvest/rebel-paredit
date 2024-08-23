@@ -187,6 +187,7 @@
   )
 
 (deftest paredit-raise-sexp
+  ;; FIXME: this works but the key binding fails.
   (buf-test SUT/raise
             ;; removed a \n here for test output clarity
             "(dynamic-wind in (fn[] |body) out)"
@@ -220,8 +221,7 @@
 (deftest paredit-backward-barf-sexp
   (buf-test SUT/barf-backward
             "(foo (bar baz |quux) zot)"
-            "(foo bar (baz |quux) zot)")
-  )
+            "(foo bar (baz |quux) zot)"))
 
 ;;;;;;;;;; Miscellaneous Commands ;;;;;;;;;;
 
