@@ -200,12 +200,19 @@
                     (let [n (-> loc z/node)]
                       (and (not= :newline (n/tag n))
                            (-> loc z/node meta :row (= (:row cur-pos ))))))
-          new-s (if (and (= (:row node-pos) (:row cur-pos))
-                         (= (:col node-pos) (:col cur-pos)))
+          new-s (cond
+                  ;; st the beginning of something, remove right siblings then remove self
+                  (and (= (:row node-pos) (:row cur-pos))
+                       (= (:col node-pos) (:col cur-pos)))
                   (-> loc
                       (rczu/remove-right-while remove?)
                       (z/remove*)
                       (z/root-string))
+                  ;; if we are inside a string
+                  (and (= (z/tag loc) :token)
+                       (string? (z/sexpr loc)))
+                  (str (subs s 0 c) (subs s (- (str-find-cursor s node-pos :at-end) 2)))
+                  :default
                   (-> loc
                       (rczu/remove-right-while remove?)
                       (truncate (- (:col cur-pos) (:col node-pos)))
@@ -329,7 +336,8 @@
          loc (z/find-last-by-pos z cur-pos)
          node (z/node loc)
          node-pos (meta node)]
-     (if (coll-end? loc cur-pos)
+     (cond
+       (coll-end? loc cur-pos)
        ;; the cursor is on the end of a collection (i.e. at the end delimiter)
        ;; zipper edge case so lots of logic here :-(
        (condp movement loc
@@ -344,7 +352,11 @@
                                                  (#(str-find-cursor s % :at-end)))) ]
                                       [(-> rightmost pe/barf-forward z/root-string)
                                        new-cur])))
+       ;; special case we are at the top of forms so do nothing
+       (-> loc z/up z/tag (= :forms))
+       [s cur]
        ;; not at the end so this is much simpler ... except for the cursor placement logic
+       :default
        [(-> loc
             pe/barf-forward
             z/root-string)

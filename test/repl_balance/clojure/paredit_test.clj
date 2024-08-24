@@ -213,8 +213,9 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
-(deftest ^:balance-error kill-inside-string-literal-test
+(deftest kill-inside-string-literal-test
   "kill inside a string"
+  ;; TODO: is this different with buffer test vs string+cursor test
   (s-cur-test SUT/kill
               "[:a \"some| string\"]"
               "[:a \"some|\"]"))
@@ -370,13 +371,20 @@
            (-> (SUT/split)
                (join-s-cur))))))
 
-(deftest ^:wip split-not-ok-test
+(deftest split-not-ok-test
   ;; split happens but cursor is misplaced
   "this looks nearly identical to the above test
   it is still before the (node-2) but it fails"
   (with-buffer
     #_>>>> "[[1 |2] 3]"
     (is (= "[[1]| [2] 3]"
+           (-> (SUT/split)
+               (join-s-cur))))))
+
+(deftest split-at-coll-end-test
+  (with-buffer
+    #_>>>> "[[1 2|] 3]"
+    (is (= "[[1 2]| [2] 3]"
            (-> (SUT/split)
                (join-s-cur))))))
 
