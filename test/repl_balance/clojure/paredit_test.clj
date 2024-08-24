@@ -578,6 +578,14 @@
                               (join-s-cur s))
                          (catch Exception _e (str "ERROR on backward movement of " orig)))))))))
 
+(deftest ^:cursor-pos backward-last-top-form-test
+  "test for last top level form, should not go to buffer beginning"
+  (with-buffer
+    #_>>>> "(foo)(bar)|"
+    (is (= "(foo)|(bar)"
+           (-> (SUT/backward)
+               (join-s-cur))))))
+
 (comment
   ;; look for error if we end with whitespace like "[x\n]"
   (let [s "[1 [22 :foo  bar]\n :z]"

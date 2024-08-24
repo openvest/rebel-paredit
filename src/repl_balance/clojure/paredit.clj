@@ -4,6 +4,7 @@
             [rewrite-clj.node :as n]
             [rewrite-clj.zip :as z]
             [rewrite-clj.custom-zipper.utils :as rczu]
+            [repl-balance.clojure.tokenizer :as tokenize]
             [clojure.string :as str]))
 
 ;; string based functions
@@ -161,19 +162,29 @@
 ;; killing
 
 (defn kill
+  "kill string up to the next closing delimiter or up to newline"
   [^String s ^Integer c]
-  ;; like kill but works on a string & cursor rather than j/*buffer*
-  ;; special case, killing after the quote we need to backspace to remove the quote.
-  ;; quote nodes MUST have 1 child
   (cond
     ; if we currently end on a closing bracket or quote, do nothing
     (or (= c (count s))
-        (#{\) \} \] \"} (.charAt s c)))
+        (#{\) \} \]} (.charAt s c))
+        ;; all of this to handle (foo |"bar")  :-(
+        ;; Using tokenize-sexp-traversal here and zippers further down??
+        ;; Keeping both while considering  moving to tag-sexp-traversal.
+        ;; tokenize-sexp-traversal may be simpler, faster and more fault-tolerant.
+        (and (= (.charAt s c) \")
+             (->> (tokenize/tag-sexp-traversal s)
+                  (drop-while (fn [[_ beg _ _]] (< beg c)))
+                  (first)
+                  ((fn [[_ beg _ tag]]
+                     (and (= beg c)
+                          (str/starts-with? (str tag) ":close-")))))))
     [s c 0]
     ; if we currently at a line ending, remove it
     (#{\newline} (.charAt s c))
     [(str (subs s 0 c) (subs s (inc c))) c 1]
     ;; if it is just after a quote symbol process without that and add it back
+    ;; quote nodes MUST have 1 child
     (and (> c 0) (#{\` \'} (.charAt s (dec c))))
     (let [[new-s _ cut-size] (kill (str (subs s 0 (dec c)) (subs s c)) (dec c))]
       [(str (subs s 0 c) (subs new-s (dec c))) c cut-size])
@@ -184,28 +195,22 @@
                   (z/of-string {:track-position? true})
                   (z/find-last-by-pos cur-pos))
           node (-> loc z/node)
-          node-pos (meta node)]
-      (if (and (= :token (n/tag node))
-               (= :string (.node_type node)))
-        (let [new-s (-> loc
-                        (z/edit (comp #(subs (str %) 0 (- (:col cur-pos) (:col node-pos) 1))))
-                        z/root-string)]
-          [new-s c (- (:end-col node-pos) (:end-col cur-pos))])
-        (let [remove? (fn [loc]
-                        (let [n (-> loc z/node)]
-                          (and (not= :newline (n/tag n))
-                               (-> loc z/node meta :row (= (:row cur-pos ))))))]
-          (let [new-s (if (and (= (:row node-pos) (:row cur-pos))
-                               (= (:col node-pos) (:col cur-pos)))
-                        (-> loc
-                            (rczu/remove-right-while remove?)
-                            (z/remove*)
-                            (z/root-string))
-                        (-> loc
-                            (rczu/remove-right-while remove?)
-                            (truncate (- (:col cur-pos) (:col node-pos)))
-                            (z/root-string)))]
-            [new-s c (- (count s) (count new-s))]))))))
+          node-pos (meta node)
+          remove? (fn [loc]
+                    (let [n (-> loc z/node)]
+                      (and (not= :newline (n/tag n))
+                           (-> loc z/node meta :row (= (:row cur-pos ))))))
+          new-s (if (and (= (:row node-pos) (:row cur-pos))
+                         (= (:col node-pos) (:col cur-pos)))
+                  (-> loc
+                      (rczu/remove-right-while remove?)
+                      (z/remove*)
+                      (z/root-string))
+                  (-> loc
+                      (rczu/remove-right-while remove?)
+                      (truncate (- (:col cur-pos) (:col node-pos)))
+                      (z/root-string)))]
+      [new-s c (- (count s) (count new-s))])))
 
 (defn kill-in-buff
   []
