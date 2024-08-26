@@ -52,9 +52,20 @@
                        dec
                        (offsets))]
     (if (first at-end?)
-      (+ row-offset (:end-col pos)
-             #_(dec (:end-col pos)))
+      (+ row-offset (dec (:end-col pos)))
       (+ row-offset (dec (:col pos))))))
+
+(defn str-find-cursor-range
+  "given a string and a position (i.e. map with [:row :col])
+  return the cursor position as an int
+  Note: inverse of str-find-pos"
+  [^String s pos & at-end?]
+  (let [offsets (str-row-offsets s)
+        row-offset (-> (:row pos)
+                       dec
+                       (offsets))]
+    [(+ row-offset (dec (:col pos)))
+     (+ row-offset (dec (:end-col pos)))]))
 
 ;; zipper/locator based functions
 
@@ -212,7 +223,7 @@
                   ;; if we are inside a string
                   (and (= (z/tag loc) :token)
                        (string? (z/sexpr loc)))
-                  (str (subs s 0 c) (subs s (- (str-find-cursor s node-pos :at-end) 2)))
+                  (str (subs s 0 c) (subs s (- (str-find-cursor s node-pos :at-end) 1)))
                   :default
                   (-> loc
                       (rczu/remove-right-while remove?)
@@ -296,14 +307,14 @@
          new-cur (condp movement loc
                    ;; at tail with multiple children
                    [#(coll-end? % pos) z/down z/rightmost z/left]
-                   :>> #(dec (str-find-cursor s (-> % z/node meta) :at-end))
+                   :>> #(str-find-cursor s (-> % z/node meta) :at-end)
                    ;; at tail with one child or no children
                    [#(coll-end? % pos)]
                    cur
                    ;; inside at the last child
                    [z/rightmost?]
                    (if-let [left-sib (z/left loc)]
-                     (dec (str-find-cursor s (-> left-sib z/node meta) :at-end))
+                     (str-find-cursor s (-> left-sib z/node meta) :at-end)
                      (inc (str-find-cursor s pos)))
                    ;; inside with a right sibling, no cursor change
                    []
@@ -443,10 +454,12 @@
               (string? (z/sexpr loc))
               (> cur (->> loc z/node meta (str-find-cursor s))))
        ;; do special case of splicing a string
-       (let [new-s (-> loc
-                       (z/replace :just-asking) #_(pe/splice)
-                       (z/root-string))]
-         [new-s cur])
+       (let [loc-pos (-> loc z/node meta)
+             ;; TODO: check for balance/breaking splices and refuse with error message
+             [s-beg s-end] (str-find-cursor-range s loc-pos)
+             ;; TODO: Maybe we need spaces if no whitespace exists
+             new-s (str (subs s 0 s-beg)  (subs s (inc s-beg) (dec s-end))  (subs s s-end))]
+         [new-s (dec cur)])
        (let [new-s (-> loc
                        #_(cond->
                                (#{\} \) \]} (.charAt s cur))
