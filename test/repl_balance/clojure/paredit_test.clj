@@ -342,7 +342,7 @@
   (with-buffer
     #_>>>> "[1 2 [3 |4 5]]"
     (is (= "[1 2 3 |4 5]"
-           (-> (repl-balance.clojure.paredit/splice)
+           (-> (SUT/splice)
                (join-s-cur))))))
 
 (deftest ^:wip splice-in-string-test

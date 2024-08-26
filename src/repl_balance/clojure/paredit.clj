@@ -5,7 +5,8 @@
             [rewrite-clj.zip :as z]
             [rewrite-clj.custom-zipper.utils :as rczu]
             [repl-balance.clojure.tokenizer :as tokenize]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [clojure.edn :as edn]))
 
 ;; string based functions
 
@@ -51,8 +52,9 @@
                        dec
                        (offsets))]
     (if (first at-end?)
-      (+ row-offset (:end-col pos))
-      (+ row-offset (:col pos) -1))))
+      (+ row-offset (:end-col pos)
+             #_(dec (:end-col pos)))
+      (+ row-offset (dec (:col pos))))))
 
 ;; zipper/locator based functions
 
@@ -427,22 +429,32 @@
   "splice the list/vector"
   ([] (splice j/*buffer*))
   ([buf]
-   (let [cur (.cursor buf)
-         s   (str buf)
-         pos (str-find-pos s cur)
-         new-s (-> s
-                   (z/of-string {:track-position? true})
-                   (z/find-last-by-pos pos)
-                   ((fn [loc]
-                      (if (#{\}\)\]} (char (.currChar buf)))
-                        loc
-                        (z/up loc))))
-                   (pe/splice)
-                   (z/root-string))]
+   (let [[new-s new-cur] (splice (str buf) (.cursor buf))]
      (doto buf
        (.clear)
        (.write new-s)
-       (.cursor cur)))))
+       (.cursor new-cur))))
+  ([s cur]
+   (let [pos (str-find-pos s cur)
+         loc (-> s
+                 (z/of-string {:track-position? true})
+                 (z/find-last-by-pos pos))]
+     (if (and (z/sexpr-able? loc)
+              (string? (z/sexpr loc))
+              (> cur (->> loc z/node meta (str-find-cursor s))))
+       ;; do special case of splicing a string
+       (let [new-s (-> loc
+                       (z/replace :just-asking) #_(pe/splice)
+                       (z/root-string))]
+         [new-s cur])
+       (let [new-s (-> loc
+                       #_(cond->
+                               (#{\} \) \]} (.charAt s cur))
+                               (z/down))
+                       (pe/splice)
+                       (z/root-string))]
+         [new-s cur])))))
+
 
 (defn split-node [n c]
   (let [sexpr (n/sexpr n)
@@ -450,7 +462,7 @@
     (->> [(subs s 0 c) (subs s c)]
          (#(if (string? sexpr)
              %
-             (map clojure.edn/read-string %)))
+             (map edn/read-string %)))
          (map n/coerce))))
 
 
@@ -480,11 +492,12 @@
                            (z/insert-left left-half)
                            (z/insert-right right-half)
                            (z/remove)
+                           ;; pe/split will not work on top level type of :forms
                            (pe/split)))
                      (z/leftmost? zloc) (z/insert-left (z/up zloc)  (-> zloc z/up z/sexpr empty)) ;2
                      (z/left zloc) (let [left-loc (z/left zloc)]
                                      (pe/split-at-pos left-loc (-> left-loc z/node meta)))
-                     :default (z/insert-left zloc :nothing-done-here))
+                     :default (throw (ex-info (str "could not split " (z/node zloc)) {}) ))
                    z/root-string)]
      [new-s cur])))
 
