@@ -4,7 +4,7 @@
             [deps-deploy.deps-deploy :as dd]
             [clojure.string :as str]))
 
-(def micro-ver 43 #_(-> (b/process {:command-args (str/split "git rev-list --count master..HEAD" #" +") :out :capture})
+(def micro-ver 60 #_(-> (b/process {:command-args (str/split "git rev-list --count master..HEAD" #" +") :out :capture})
                   :out
                   (str/trim)))
 (def minor-ver 2 #_(-> (b/process {:command-args (str/split "git rev-list --count master" #" +") :out :capture})
@@ -12,7 +12,7 @@
                    (str/trim)))
 
 (def lib 'com.openvest/repl-balance)
-(def version (format "0.%s.%s-SNAPSHOT" minor-ver micro-ver))
+(def version (format "0.%s.%s" minor-ver micro-ver))
 (def main 'repl-balance.main)
 (def class-dir "target/classes")
 ;; delay to defer side effects (artifact downloads)

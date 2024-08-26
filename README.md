@@ -8,7 +8,9 @@ A terminal readline library for Clojure Dialects.  Forked from rebel-readline th
 
 ## Why create a terminal readline library?
 
-https://github.com.openvest/repl-balance/blob/master/repl-balance/doc/intro.md
+- no-editor required (no ide requirements for new clojure devs)
+- work on remote machines
+- work inside docker containers (where there's no editor with plugins)
 
 ## Important note!!!
 
@@ -36,7 +38,7 @@ If you want to try this really quickly
 and then invoke this:
 
 ```shell
-clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.2.43-SNAPSHOT\"}}}" -m repl-balance.main
+clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.2.60\"}}}" -m repl-balance.main
 ```
 
 That should start a Clojure REPL that takes its input from the ReplBalance readline editor.
@@ -49,7 +51,7 @@ Alternatively you can specify an alias in your `$HOME/.clojure/deps.edn`
 ```clojure
 {
  ...
- :aliases {:repl/balance {:extra-deps {com.openvest/repl-balance {:mvn/version "0.2.43-SNAPSHOT"}}
+ :aliases {:repl/balance {:extra-deps {com.openvest/repl-balance {:mvn/version "0.2.60"}}
                           :main-opts  ["-m" "repl-balance.main"]}}
 }
 ```
@@ -62,7 +64,7 @@ $ clojure -M:repl/balance
 
 #### Leiningen
 
-Add `[com.openvest/repl-balance "0.2.43-SNAPSHOT"]` to the dependencies in your
+Add `[com.openvest/repl-balance "0.2.60"]` to the dependencies in your
 `project.clj` then start a REPL like this:
 
 ```shell
