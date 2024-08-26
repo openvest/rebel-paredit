@@ -78,9 +78,8 @@
   "for a locator and a position (e.g. position of a cursor)
   check whither position is at the `tail`.
   `tail` here means part of the collection but after the last child"
-  (let [node (z/node loc)
-        node-pos (meta node)]
-    (and (#{:vector :set :list :map :forms} (-> node n/tag))
+  (let [node-pos (-> loc z/node meta)]
+    (and (#{:vector :set :list :map :forms} (z/tag loc))
          (= (:end-row pos) (:end-row node-pos))
          (= (:end-col pos) (:end-col node-pos))
          loc)))
@@ -445,23 +444,49 @@
        (.write new-s)
        (.cursor cur)))))
 
+(defn split-node [n c]
+  (let [sexpr (n/sexpr n)
+        s (str sexpr)]
+    (->> [(subs s 0 c) (subs s c)]
+         (#(if (string? sexpr)
+             %
+             (map clojure.edn/read-string %)))
+         (map n/coerce))))
+
+
 (defn split
   "split the list/vector"
   ([] (split j/*buffer*))
   ([buf]
-   (let [cur (.cursor buf)
-         s   (str buf)
-         pos (str-find-pos s cur)
-         new-s (-> s
-                   (z/of-string {:track-position? true})
-                   (z/find-last-by-pos pos)
-                   ;(z/skip-whitespace)
-                   (pe/split-at-pos pos)
-                   (z/root-string))]
+   (let [s   (str buf)
+         cur (.cursor buf)
+         [new-s new-cur] (split s cur)]
      (doto buf
        (.clear)
        (.write new-s)
-       (.cursor cur)))))
+       (.cursor new-cur))))
+  ([s cur]
+   (let [pos (str-find-pos s cur)
+         zloc (-> s
+                  (z/of-string {:track-position? true})
+                  (z/find-last-by-pos pos))
+         loc-cursor  (str-find-cursor s (-> zloc z/node meta))
+         new-s (-> (cond
+                     (coll-end? zloc pos) (z/insert-right zloc (-> zloc z/sexpr empty))
+                     (z/whitespace? zloc) (pe/split-at-pos zloc pos) ; 3
+                     (> cur loc-cursor)
+                     (let [[left-half right-half] (split-node (z/node zloc) (- cur loc-cursor))]
+                       (-> zloc
+                           (z/insert-left left-half)
+                           (z/insert-right right-half)
+                           (z/remove)
+                           (pe/split)))
+                     (z/leftmost? zloc) (z/insert-left (z/up zloc)  (-> zloc z/up z/sexpr empty)) ;2
+                     (z/left zloc) (let [left-loc (z/left zloc)]
+                                     (pe/split-at-pos left-loc (-> left-loc z/node meta)))
+                     :default (z/insert-left zloc :nothing-done-here))
+                   z/root-string)]
+     [new-s cur])))
 
 (def risen (atom {}))
 (defn raise

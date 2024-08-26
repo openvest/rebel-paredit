@@ -371,22 +371,75 @@
            (-> (SUT/split)
                (join-s-cur))))))
 
-(deftest split-not-ok-test
-  ;; split happens but cursor is misplaced
+(deftest split-at-last-node-test
   "this looks nearly identical to the above test
   it is still before the (node-2) but it fails"
+  ;; note that rewrite-clj.paredit/split expects the loc to be to the left to the split target
   (with-buffer
     #_>>>> "[[1 |2] 3]"
     (is (= "[[1]| [2] 3]"
            (-> (SUT/split)
                (join-s-cur))))))
 
-(deftest split-at-coll-end-test
+
+(deftest ^:cursor-pos split-at-coll-end-test
   (with-buffer
     #_>>>> "[[1 2|] 3]"
-    (is (= "[[1 2]| [2] 3]"
+    (is (= "[[1 2]| [] 3]"
            (-> (SUT/split)
                (join-s-cur))))))
+
+(deftest split-everywhere-14-tests
+  (let [correct-splits [#_["|[[1 22 33] 4]"
+                         "|[[1 22 33] 4]"]
+
+                        ["[|[1 22 33] 4]"
+                         "[]| [[1 22 33] 4]"]
+
+                        ["[[|1 22 33] 4]"
+                         "[[]| [1 22 33] 4]"]
+
+                        ["[[1| 22 33] 4]"
+                         "[[1]| [22 33] 4]"]
+
+                        ["[[1 |22 33] 4]"
+                         "[[1]| [22 33] 4]"]
+
+                        ["[[1 2|2 33] 4]"
+                         "[[1 2]| [2 33] 4]"]
+
+                        ["[[1 22| 33] 4]"
+                         "[[1 22]| [33] 4]"]
+
+                        ["[[1 22 |33] 4]"
+                         "[[1 22]| [33] 4]"]
+
+                        ["[[1 22 3|3] 4]"
+                         "[[1 22 3]| [3] 4]"]
+
+                        ["[[1 22 33|] 4]"
+                         "[[1 22 33]| [] 4]"]
+
+                        ["[[1 22 33]| 4]"
+                         "[[1 22 33]]| [4]"]
+
+                        ["[[1 22 33] |4]"
+                         "[[1 22 33]]| [4]"]
+
+                        ["[[1 22 33] 4|]"
+                         "[[1 22 33] 4]| []"]
+
+                        #_["[[1 22 33] 4]|"
+                         "[[1 22 33] 4]| []"]]]
+    (dorun (for [[orig target] correct-splits
+                 :let [[s cur] (split-s-cur orig)
+                       [target-s target-cur] (split-s-cur target)
+                       [new-s new-cur] (SUT/split s cur)]]
+             (testing (str "split: " orig)
+               (is (= target-s new-s))
+               ;; TODO: get cursors right but for now just testing the new-string(s)
+               #_(is (= target
+                      (join-s-cur new-s new-cur))))))))
 
 (deftest ^:cursor-pos split-at-string-test
   ;; split happens but cursor is misplaced
