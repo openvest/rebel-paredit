@@ -22,13 +22,12 @@
 ;; can this be a function instead of a macro?
 ;; looks like the function version of this below is simpler
 ;; the only advantage here is the ability to add the function
-;; name to the `(testing ... ` output. Maybe more advantages later
+;; name to the `(testing ... )` output. Maybe more advantages later
 ;; like improved error handling so keep using this one for now
 (defmacro s-cur-test
   "To test SUT/functions that take `[string cursor]` as arguments.
   The orig and target are strings that MUST include a | to indicate the cursor position"
   [str-cur-fn orig target]
-
   `(let [[orig-s# orig-cur#] (split-s-cur ~orig)
          [target-s# target-cur#] (split-s-cur ~target)
          [modified-s# modified-cur#] (~str-cur-fn orig-s# orig-cur#)]
@@ -54,7 +53,7 @@
   `(let [[orig-s# orig-cur#] (split-s-cur ~orig)
         [target-s# target-cur#] (split-s-cur ~target)
         buffer# (doto (BufferImpl.)
-                  (.write orig-s#)
+                  (.write ^String orig-s#)
                   (.cursor orig-cur#))]
     (~buf-fn buffer#)
     (let [modified-s# (str buffer#)
@@ -62,4 +61,3 @@
       (testing (str "testing " (name '~buf-fn) " with: "~orig)
         (is (= target-s# modified-s#))
         (is (= target-cur# modified-cur#))))))
-

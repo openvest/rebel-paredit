@@ -228,7 +228,9 @@
 (deftest ^:cursor-pos paredit-split-sexp
   (buf-test SUT/split
             "(hello| world)"
-            "(hello)| (world)")
+            "(hello)| (world)"))
+
+(deftest paredit-split-string-test
   ;; FIXME: the reference card actually has this test which fails
   ;;        the rewrite-clj refuses to create new sequence nodes of type :forms
   ;; edge case:

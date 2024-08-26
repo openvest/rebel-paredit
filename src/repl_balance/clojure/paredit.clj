@@ -59,7 +59,7 @@
   "given a string and a position (i.e. map with [:row :col])
   return the cursor position as an int
   Note: inverse of str-find-pos"
-  [^String s pos & at-end?]
+  [^String s pos]
   (let [offsets (str-row-offsets s)
         row-offset (-> (:row pos)
                        dec
@@ -461,23 +461,24 @@
              new-s (str (subs s 0 s-beg)  (subs s (inc s-beg) (dec s-end))  (subs s s-end))]
          [new-s (dec cur)])
        (let [new-s (-> loc
-                       #_(cond->
-                               (#{\} \) \]} (.charAt s cur))
-                               (z/down))
+                       ((fn [loc]
+                          (if (#{\} \) \]} (.charAt s cur))
+                           loc
+                           (z/up loc))))
                        (pe/splice)
                        (z/root-string))]
          [new-s cur])))))
 
-
 (defn split-node [n c]
   (let [sexpr (n/sexpr n)
-        s (str sexpr)]
-    (->> [(subs s 0 c) (subs s c)]
-         (#(if (string? sexpr)
-             %
-             (map edn/read-string %)))
-         (map n/coerce))))
-
+        is-string? (string? sexpr)
+        s (cond-> sexpr (not is-string?) str)
+        ;; if this is a string node the cursor input will be one too large
+        ;; to accommodate the opening double-quote
+        cur (if is-string? (dec c) c)]
+    (cond->> [(subs s 0 cur) (subs s cur)]
+             (not is-string?) (map edn/read-string)
+             :then (map n/coerce))))
 
 (defn split
   "split the list/vector"
@@ -496,9 +497,14 @@
                   (z/of-string {:track-position? true})
                   (z/find-last-by-pos pos))
          loc-cursor  (str-find-cursor s (-> zloc z/node meta))
+         inside-string? (and (> cur loc-cursor)
+                             (z/sexpr-able? zloc)
+                             (-> zloc z/sexpr string?))
          new-s (-> (cond
                      (coll-end? zloc pos) (z/insert-right zloc (-> zloc z/sexpr empty))
                      (z/whitespace? zloc) (pe/split-at-pos zloc pos) ; 3
+                     ;; TODO: check to see if this logic is needed for inside-string?
+                     ;;       rewrite-clj.paredit/split-at-pos claims to split strings OK
                      (> cur loc-cursor)
                      (let [[left-half right-half] (split-node (z/node zloc) (- cur loc-cursor))]
                        (-> zloc
@@ -506,13 +512,15 @@
                            (z/insert-right right-half)
                            (z/remove)
                            ;; pe/split will not work on top level type of :forms
-                           (pe/split)))
+                           (cond->
+                             (not inside-string?) (pe/split))))
                      (z/leftmost? zloc) (z/insert-left (z/up zloc)  (-> zloc z/up z/sexpr empty)) ;2
                      (z/left zloc) (let [left-loc (z/left zloc)]
                                      (pe/split-at-pos left-loc (-> left-loc z/node meta)))
                      :default (throw (ex-info (str "could not split " (z/node zloc)) {}) ))
                    z/root-string)]
-     [new-s cur])))
+     ;; TODO: better cursor logic.  Maybe get it from the modified zloc above.
+     [new-s (inc cur) #_(cond-> cur inside-string? inc)])))
 
 (def risen (atom {}))
 (defn raise

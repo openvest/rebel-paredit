@@ -19,8 +19,8 @@
   [s & body]
   `(let [[s# cur#] (split-s-cur ~s)
          buffer# (doto (BufferImpl.)
-                   (.write s#)
-                   (.cursor cur#))
+                   (.write ^String s#)
+                   (.cursor ^Integer cur#))
          #_#_line-reader# (repl-balance.core/ensure-terminal (proxy [LineReaderImpl]
                               [j/*terminal*
                                "Test Readline"
@@ -363,7 +363,7 @@
            (-> (SUT/splice)
                (join-s-cur))))))
 
-(deftest ^:cursor-pos split-test
+(deftest split-test
   ;; split happens but cursor is misplaced
   (with-buffer
     #_>>>> "[[1| 2] 3]"
@@ -371,7 +371,7 @@
            (-> (SUT/split)
                (join-s-cur))))))
 
-(deftest split-at-last-node-test
+(deftest ^:cursor-pos split-at-last-node-test
   "this looks nearly identical to the above test
   it is still before the (node-2) but it fails"
   ;; note that rewrite-clj.paredit/split expects the loc to be to the left to the split target
@@ -390,8 +390,9 @@
                (join-s-cur))))))
 
 (deftest split-everywhere-14-tests
-  (let [correct-splits [#_["|[[1 22 33] 4]"
-                         "|[[1 22 33] 4]"]
+  (let [correct-splits [;; cannot insert at top error
+                        #_["|[[1 22 33] 4]"
+                           "|[[1 22 33] 4]"]
 
                         ["[|[1 22 33] 4]"
                          "[]| [[1 22 33] 4]"]
@@ -428,7 +429,7 @@
 
                         ["[[1 22 33] 4|]"
                          "[[1 22 33] 4]| []"]
-
+                        ;; emacs throws an error and intellij does nothing
                         #_["[[1 22 33] 4]|"
                          "[[1 22 33] 4]| []"]]]
     (dorun (for [[orig target] correct-splits
@@ -441,7 +442,7 @@
                #_(is (= target
                       (join-s-cur new-s new-cur))))))))
 
-(deftest ^:cursor-pos split-at-string-test
+(deftest split-at-string-test
   ;; split happens but cursor is misplaced
   (with-buffer
     #_>>>> "[[1 \"some-|long-string\"] 3]"
