@@ -323,6 +323,7 @@
 (test/run-test barf-forward-repl-test)
 (test/run-test-var #'barf-forward-repl-test)
 
+
 (require '[cljfmt.core :as fmt])
 fmt/reformat-form
 

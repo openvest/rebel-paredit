@@ -15,12 +15,32 @@
             [org.jline.reader.impl LineReaderImpl BufferImpl]
             [org.jline.terminal Terminal]))
 
-(defmacro def-let [bindings & body]
-  (assert (= 0 (mod (count bindings) 2)) "Must have an even number of bindings")
-  `(do ~@(->> bindings
-              (partition 2)
-              (map (fn [[s v]] (list 'def s v))))
-       ~@body))
+(defmacro def-let
+  "This is the standard let macro with the exception that
+  it promotes all of the let binding variables to global scope
+  Best for interactive investigation of a let structure
+  e.g. simply change a let to let-def and work with the bindings
+       in global scope for debugging"
+  [bindings & body]
+  (assert (vector? bindings) "expected a vector for bindings")
+  (assert (even? (count bindings))) "must have an even number of forms in binding vector"
+  (let [destructured (destructure bindings)
+        global-defs (->> destructured
+                         (partition 2)
+                         (remove (comp (partial re-seq #"(vec|map)__")
+                                       name
+                                       first))
+                         (map #(concat (list 'def) %)))]
+    `(let* ~destructured
+       (do 
+         ~@global-defs)
+       ~@body)))
+
+#_(def-let [a 8
+          {:keys [aa] :as m} {:aa 33}
+          [x y] [11 12]]
+    (+ x a))
+
 
 
 (def ns-stack (atom nil))

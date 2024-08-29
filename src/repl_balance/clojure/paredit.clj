@@ -1,5 +1,7 @@
 (ns repl-balance.clojure.paredit
-  (:require [repl-balance.jline-api :as j]
+  (:require [repl-balance.clojure.sexp :as sexp]
+            [repl-balance.jline-api :as j]
+            [cljfmt.core :as fmt]
             [rewrite-clj.paredit :as pe]
             [rewrite-clj.node :as n]
             [rewrite-clj.zip :as z]
@@ -231,6 +233,50 @@
                       (z/root-string)))]
       [new-s c (- (count s) (count new-s))])))
 
+(defn new-kill
+  "kill string up to the next closing delimiter or up to newline"
+  [^String s ^Integer c]
+  (cond
+    ;; kill everything
+    (= c 0)
+    ["" c (count s)]
+    ; if we currently at a line ending, remove it (and next indent)
+    ;; should we add a space if there is not one preceding
+    (= \newline (.charAt s c))
+    (let [cut-size (-> (re-find #"^\s*" (subs s c))
+                       count inc)
+          add-space? (not= \space (.charAt s (dec c)))]
+      [(str (subs s 0 c) (cond add-space? " ") (subs s (dec (+ c cut-size))))
+       (cond-> c add-space? inc) (cond-> cut-size add-space? dec)])
+    :default
+    (let [tokens (->> (tokenize/tag-sexp-traversal s)
+                      (drop-while (fn [[_ beg _ _]] (<= beg c))))
+          [_ beg end tag] (first tokens)]
+      (cond
+        ;; at a closing terminator so do nothing
+        (and (#{:close-paren :close-brace :close-bracket :close-quote} tag)
+             (= c beg))
+        [s c 0]
+        ;; in a string body delete up to the closing quote
+        (#{:string-literal-body} tag)
+        (let [close-cur (->> tokens second second)]         ; the next token should be the :close quote
+          [(str (subs s 0 c) "XXX" (subs s close-cur)) c (- close-cur c)])
+        ;; TODO: not a good place to be and not sure what the right thing to do is
+        ;; for now if unterminated then just delete the remaining and terminate
+        (#{:unterm-string-literal-body} tag)
+        [(str (subs s 0 c) \") c (- (count s) c)]           ;;FIXME: this adds a " so is not consistent with kill "just cutting"
+        :default
+        ;; TODO: to be more through should check that the
+        ;;      tag matches the tag of `find-open-sexp-start`
+        ;;      and that the whole s is balanced
+        (let [[_ beg-end end-end close-tag] (sexp/find-open-sexp-end tokens c)
+              next-new-line (or (str/index-of s \newline c)
+                                (count s))
+              cut-end (cond
+                        beg-end (min beg-end next-new-line)
+                        :default next-new-line)]
+          [(str (subs s 0 c) "|"c "|" (subs s cut-end)) c  (- cut-end c)])))))
+
 (defn kill-in-buff
   []
   (let [s (str j/*buffer*)
@@ -280,6 +326,9 @@
                   (z/of-string {:track-position? true})
                   (z/find-last-by-pos pos)
                   (pe/slurp-forward)
+                  z/up
+                  ((fn [loc]
+                     (z/replace loc (-> loc z/node fmt/unindent (fmt/indent)))))
                   (z/root-string)
                   (subs cur))]
      (doto buf
