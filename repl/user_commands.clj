@@ -26,3 +26,21 @@
       (prn "autopairing is now on")
       (prn "autopairing is now off")))
   "toggle the autopairing behavior")
+
+(comment
+;; elisp function/command to paste last repl-balance history command into emacs
+(defun repl-balance-history ()
+    (interactive)
+    (with-temp-buffer
+      (insert-file-contents "../.rebel_readline_history")
+      (goto-char (point-max))
+      (forward-line -1)
+      (setq hist (replace-regexp-in-string
+                  "\\\\n" "\n"
+                  (buffer-substring-no-properties
+                   (+ 14 (line-beginning-position))
+                   (line-end-position)))))
+    (push-mark (point))
+    (insert hist))
+
+)

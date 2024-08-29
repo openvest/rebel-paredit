@@ -1,4 +1,4 @@
-(ns user
+(ns rewrite-clj
   (:require [rewrite-clj.parser :as p]
             [rewrite-clj.node :as n]
             [rewrite-clj.zip :as z]
@@ -322,3 +322,12 @@
               (is (= "oops" modified))))))))
 (test/run-test barf-forward-repl-test)
 (test/run-test-var #'barf-forward-repl-test)
+
+(require '[cljfmt.core :as fmt])
+fmt/reformat-form
+
+(-> "[x\n                                                    y]"
+    (z/of-string {:track-position? true})
+    ((fn [loc]
+       (z/replace loc (-> loc z/node fmt/unindent (fmt/indent)))))
+    z/root-string)
