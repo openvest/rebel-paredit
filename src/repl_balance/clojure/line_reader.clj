@@ -485,9 +485,23 @@
 ;; paredit widgets
 ;; -----------------------------------------
 
-(def paredit-kill
+(def paredit-kill-orig
   (create-widget
     (paredit/kill-in-buff)
+    true))
+
+(def paredit-kill
+  (create-widget
+    (let [join-s-cur (requiring-resolve 'repl-balance.test-helpers/join-s-cur)
+          s (str api/*buffer*)
+          cur (.cursor api/*buffer*)
+          s1-cur1 (apply join-s-cur (take 2 (paredit/kill s cur)))
+          s2-cur2 (apply join-s-cur (take 2 (paredit/kill-new s cur)))]
+     (paredit/kill-in-buff)
+     (if (not= s1-cur1 s2-cur2)
+      (api/display-message (str (pr-str (join-s-cur s cur)) "\n"
+                                (pr-str s1-cur1) "\n"
+                                (pr-str s2-cur2)))))
     true))
 
 (def paredit-slurp-forward

@@ -332,3 +332,43 @@ fmt/reformat-form
     ((fn [loc]
        (z/replace loc (-> loc z/node fmt/unindent (fmt/indent)))))
     z/root-string)
+
+(defmethod commands/command :repl/ls [[_ dir]]
+  (let [dir (or dir ".")]
+    (->> (file-seq (clojure.java.io/file (str dir)))
+         (filter #(and (.isFile %)
+                       (nil? (re-find #"/\\\\." (str %)))))
+         (mapv str)
+         clojure.pprint/pprint)))
+(defmethod commands/command-doc :repl/ls [_] "list files for a directory")
+
+(def-let [orig "(def foo |[[x xx][ \n   y \n  (+ x y))"
+          [s cur] (split-s-cur orig)
+          tokens (tokenize/tag-sexp-traversal s)
+          next-newline  (str/index-of s "\n" cur)
+          open (->> (sexp/find-open-sexp-starts tokens next-newline)
+                    (take-while (fn [[c s e t]] (>= s cur)))
+                    first)
+          close (->> (sexp/find-open-sexp-ends tokens next-newline)
+                     first)]
+  (->> (pe/kill s cur)
+       (take 2)
+       (apply join-s-cur)
+       (vector s))
+  )
+
+(def-let [orig "(def foo |[[x xx] ] \n   y  \n  (+ x y))"
+          [s cur] (split-s-cur orig)
+          tokens (tokenize/tag-sexp-traversal s)
+          next-newline  (str/index-of s \newline cur)          ]
+  (if-let [open (->> (sexp/find-open-sexp-starts tokens next-newline)
+                     (take-while (fn [[c s e t]] (>= s cur)))
+                     first)]
+    (->> (sexp/find-open-sexp-ends tokens next-newline)
+         first
+         (#(nth % 2))
+         (subs s)
+         (str (subs s 0 cur)))
+    (str (subs s 0 cur) (subs s next-newline))))
+
+

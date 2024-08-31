@@ -1,3 +1,5 @@
+
+
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.11.3"}
         org.jline/jline {:mvn/version "3.26.2"}  ;; slower than individual imports?
@@ -9,7 +11,7 @@
         compliment/compliment {:mvn/version "0.5.5"}}
  :aliases {:repl/balance {:extra-paths ["repl"]
                           :extra-deps  {nrepl/nrepl               {:mvn/version "1.1.1"}
-                                        cider/cider-nrepl         {:mvn/version "0.49.0"}
+                                        cider/cider-nrepl         {:mvn/version "0.50.1"}
                                         clj-commons/pomegranate   {:mvn/version "1.2.23"}
                                         org.clojure/tools.deps.alpha ; add-lib3 branch
                                         {:git/url "https://github.com/clojure/tools.deps.alpha"

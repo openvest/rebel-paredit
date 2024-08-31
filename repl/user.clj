@@ -13,7 +13,8 @@
             [org.jline.keymap KeyMap]
             [org.jline.utils InfoCmp InfoCmp$Capability]
             [org.jline.reader.impl LineReaderImpl BufferImpl]
-            [org.jline.terminal Terminal]))
+            [org.jline.terminal Terminal]
+            [org.jline.utils AttributedStringBuilder AttributedString AttributedStyle]))
 
 (defmacro def-let
   "This is the standard let macro with the exception that
@@ -40,7 +41,6 @@
           {:keys [aa] :as m} {:aa 33}
           [x y] [11 12]]
     (+ x a))
-
 
 
 (def ns-stack (atom nil))

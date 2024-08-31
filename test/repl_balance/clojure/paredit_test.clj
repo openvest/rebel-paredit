@@ -153,6 +153,12 @@
               "(foo |\"bar\")"
               "(foo |)"))
 
+(deftest kill-open-brrace-in-kill-test
+  "kill should include the element that starts between the cursor and line end"
+  (s-cur-test SUT/kill
+              "(let |[foo 1\n   bar 2])"
+              "(let |)"))
+
 (deftest kill-end-of-root-test
   "some kills without space before the string"
   (s-cur-test SUT/kill

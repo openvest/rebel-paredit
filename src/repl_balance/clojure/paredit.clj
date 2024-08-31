@@ -199,7 +199,7 @@
     [(str (subs s 0 c) (subs s (inc c))) c 1]
     ;; if it is just after a quote symbol process without that and add it back
     ;; quote nodes MUST have 1 child
-    (and (> c 0) (#{\` \'} (.charAt s (dec c))))
+    (and (> c 0) (#{\` \' \@} (.charAt s (dec c))))
     (let [[new-s _ cut-size] (kill (str (subs s 0 (dec c)) (subs s c)) (dec c))]
       [(str (subs s 0 c) (subs new-s (dec c))) c cut-size])
     ;; everything else is handled by rewrite-clj
@@ -213,7 +213,7 @@
           remove? (fn [loc]
                     (let [n (-> loc z/node)]
                       (and (not= :newline (n/tag n))
-                           (-> loc z/node meta :row (= (:row cur-pos ))))))
+                           (-> loc z/node meta :row (= (:row cur-pos))))))
           new-s (cond
                   ;; st the beginning of something, remove right siblings then remove self
                   (and (= (:row node-pos) (:row cur-pos))
@@ -233,49 +233,35 @@
                       (z/root-string)))]
       [new-s c (- (count s) (count new-s))])))
 
-(defn new-kill
+(defn kill-new
   "kill string up to the next closing delimiter or up to newline"
-  [^String s ^Integer c]
+  [^String s ^Integer cur]
   (cond
     ;; kill everything
-    (= c 0)
-    ["" c (count s)]
+    ;; TODO: if balanced, remove one form
+    (= cur 0)
+    ["" cur (count s)]
+    ;; at end of buffer so do nothing
+    (= cur (count s))
+    [s cur 0]
     ; if we currently at a line ending, remove it (and next indent)
     ;; should we add a space if there is not one preceding
-    (= \newline (.charAt s c))
-    (let [cut-size (-> (re-find #"^\s*" (subs s c))
-                       count inc)
-          add-space? (not= \space (.charAt s (dec c)))]
-      [(str (subs s 0 c) (cond add-space? " ") (subs s (dec (+ c cut-size))))
-       (cond-> c add-space? inc) (cond-> cut-size add-space? dec)])
+    (= \newline (.charAt s cur))
+    #_(let [cut-size (-> (re-find #"^\s*" (subs s cur))
+                         count inc)
+            add-space? (not= \space (.charAt s (dec cur)))]
+        [(str (subs s 0 cur) (cond add-space? " ") (subs s (dec (+ cur cut-size))))
+         (cond-> cur add-space? inc) (cond-> cut-size add-space? dec)])
+    [(str (subs s 0 cur) (subs s (inc cur))) cur 1]
     :default
-    (let [tokens (->> (tokenize/tag-sexp-traversal s)
-                      (drop-while (fn [[_ beg _ _]] (<= beg c))))
-          [_ beg end tag] (first tokens)]
-      (cond
-        ;; at a closing terminator so do nothing
-        (and (#{:close-paren :close-brace :close-bracket :close-quote} tag)
-             (= c beg))
-        [s c 0]
-        ;; in a string body delete up to the closing quote
-        (#{:string-literal-body} tag)
-        (let [close-cur (->> tokens second second)]         ; the next token should be the :close quote
-          [(str (subs s 0 c) "XXX" (subs s close-cur)) c (- close-cur c)])
-        ;; TODO: not a good place to be and not sure what the right thing to do is
-        ;; for now if unterminated then just delete the remaining and terminate
-        (#{:unterm-string-literal-body} tag)
-        [(str (subs s 0 c) \") c (- (count s) c)]           ;;FIXME: this adds a " so is not consistent with kill "just cutting"
-        :default
-        ;; TODO: to be more through should check that the
-        ;;      tag matches the tag of `find-open-sexp-start`
-        ;;      and that the whole s is balanced
-        (let [[_ beg-end end-end close-tag] (sexp/find-open-sexp-end tokens c)
-              next-new-line (or (str/index-of s \newline c)
-                                (count s))
-              cut-end (cond
-                        beg-end (min beg-end next-new-line)
-                        :default next-new-line)]
-          [(str (subs s 0 c) "|"c "|" (subs s cut-end)) c  (- cut-end c)])))))
+    (let [tokens (tokenize/tag-sexp-traversal s)
+          buff-end (count s)
+          next-newline (or (str/index-of s \newline cur) buff-end)
+          [_ beg _end _tag] (sexp/find-open-sexp-end tokens cur)
+          cut-end (min next-newline (or beg next-newline))]
+      [(str (subs s 0 cur)
+            (subs s cut-end))
+       cur (- cut-end cur)])))
 
 (defn kill-in-buff
   []
@@ -283,7 +269,7 @@
         c (.cursor j/*buffer*)
         [_new-s _new-c cut-len] (kill s c)
         kill-str (subs s c (+ c cut-len))]
-    (when (not-empty kill-str)  #_ (re-find #"[^\s]" kill-str) ;;  exclude all whitespace from killRing?
+    (when (not-empty kill-str)  #_(re-find #"[^\s]" kill-str) ;;  exclude all whitespace from killRing?
       (j/add-to-killRing kill-str))
     (.delete j/*buffer* cut-len)))
 
