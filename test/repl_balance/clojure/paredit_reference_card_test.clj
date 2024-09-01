@@ -11,20 +11,20 @@
 
 ;;;;;;;;;; Basic Insertion Commands ;;;;;;;;;;
 #_(deftest ^:autopair paredit-open-round
-  "(a b |c d)"
-  "(a b (|) c d)"
-
-  "(foo \"bar |baz\" quux)"
-  "(foo \"bar (|baz\" quux)"
-  )
+  (s-cur-test SUT/open-round
+              "(a b |c d)"
+              "(a b (|) c d)")
+  (s-cur-test SUT/open-round
+              "(foo \"bar |baz\" quux)"
+              "(foo \"bar (|baz\" quux)"))
 
 #_(deftest ^:autopair paredit-close-round
-  "(a b |c  )"
-  "(a b c)|"
-
-  "; Hello,| world!"
-  "; Hello,)| world!"
-  )
+  (s-cur-test SUT/close-round
+              "(a b |c  )"
+              "(a b c)|")
+  (s-cur-test SUT/close-round
+              "; Hello,| world!"
+              "; Hello,)| world!"))
 
 #_(deftest ^:autopair paredit-close-round-and-newline
   "Not sure about this example. It's more lispy than clojure
@@ -34,18 +34,17 @@
   )
 
 #_(deftest ^:autopair paredit-open-square
-
-  "(a b |c d)"
-  "(a b [|] c d)"
-
-  "(foo \"bar |baz\" quux)"
-  "(foo \"bar [|baz\" quux)"
-  )
+  (s-cur-test SUT/open-square
+              "(a b |c d)"
+              "(a b [|] c d)")
+  (s-cur-test SUT/open-square
+              "(foo \"bar |baz\" quux)"
+              "(foo \"bar [|baz\" quux)"))
 
 #_(deftest ^:autopair paredit-close-square
-  "(define-key keymap [frob|  ] 'frobnicate)"
-  "(define-key keymap [frob]| 'frobnicate)"
-  )
+  (s-cur-test SUT/close-square
+              "(define-key keymap [frob|  ] 'frobnicate)"
+              "(define-key keymap [frob]| 'frobnicate)"))
 
 #_(deftest ^:autopair paredit-doublequote
 

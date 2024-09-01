@@ -109,7 +109,7 @@
 (deftest kill-at-line-end-test
   "kill with cursor placed at the end of the line"
   (let [[beg-str beg-cur] (split-s-cur "(defn f[x y]|\n  (+ x 8))")
-        [new-str new-cur] (split-s-cur "(defn f[x y]|  (+ x 8))")
+        [new-str new-cur] (split-s-cur "(defn f[x y]|(+ x 8))")
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
@@ -153,7 +153,7 @@
               "(foo |\"bar\")"
               "(foo |)"))
 
-(deftest kill-open-brrace-in-kill-test
+(deftest kill-open-brace-in-kill-test
   "kill should include the element that starts between the cursor and line end"
   (s-cur-test SUT/kill
               "(let |[foo 1\n   bar 2])"
@@ -248,7 +248,7 @@
     (is (= "[[1 |2 [3 4]] 5]"
            (-> (SUT/slurp-forward)
                (join-s-cur))))))
-
+[1 [3 4]]
 (deftest slurp-forward-tail-test
   "slurp forward when at the end of a list type node
    (i.e. no locator there)"
@@ -257,6 +257,19 @@
       (is (= "[[1 2| [3 4]] 5]"
              (-> (SUT/slurp-forward)
                  (join-s-cur))))))
+
+(deftest slurp-forward-quoted-test
+  "slurp forward when there is a quote i.e. invalid sexp"
+  (with-buffer
+    #_>>>> "(require '[|]this)"
+    (is (= "\"(require '[|this])"
+           (-> (SUT/slurp-forward)
+               (join-s-cur)))))
+  (with-buffer
+    #_>>>> "@(|def x) 3"
+    (is (= "@(|def x 3)"
+           (-> (SUT/slurp-forward)
+               (join-s-cur))))))
 
 (deftest barf-forward-test
   (with-buffer
@@ -327,10 +340,24 @@
            (-> (SUT/slurp-backward)
                (join-s-cur))))))
 
+(deftest slurp-backward-from-last-element-test
+  (with-buffer
+    #_>>>> "[1 [2 3|]]"
+    (is (= "[[1 2 3|]]"
+           (-> (SUT/slurp-backward)
+               (join-s-cur))))))
+
 (deftest barf-backward-test
   (with-buffer
     #_>>>> "[[[1 2]| 3 4] 5]"
     (is (= "[[1 2] |[3 4] 5]"
+           (-> (SUT/barf-backward)
+               (join-s-cur))))))
+
+(deftest barf-backward-from-last-element-test
+  (with-buffer
+    #_>>>> "[1 [2 3|]]"
+    (is (= "[1 2 [3|]]"
            (-> (SUT/barf-backward)
                (join-s-cur))))))
 
