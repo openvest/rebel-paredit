@@ -430,11 +430,15 @@
          s (str buf)
          old-tail-len (- (count s) cur)
          pos (str-find-pos s cur)
-         new-s (-> s
-                   (z/of-string {:track-position? true})
-                   (z/find-last-by-pos pos)
-                   (pe/slurp-backward)
-                   (z/root-string))]
+         loc (-> s
+                 (z/of-string {:track-position? true})
+                 (z/find-last-by-pos pos))
+         new-s (if (coll-end? loc pos)
+                 (-> (or (some-> loc z/down z/rightmost*)
+                         (-> loc (z/insert-child (n/spaces 1)) z/down))
+                     pe/slurp-backward
+                     z/root-string)
+                 (-> loc pe/slurp-backward z/root-string))]
      (doto buf
        (.clear)
        (.write new-s)
@@ -448,11 +452,15 @@
          s (str buf)
          old-tail-len (- (count s) cur)
          pos (str-find-pos s cur)
-         new-s (-> s
-                   (z/of-string {:track-position? true})
-                   (z/find-last-by-pos pos)
-                   (pe/barf-backward)
-                   (z/root-string))]
+         loc (-> s
+                 (z/of-string {:track-position? true})
+                 (z/find-last-by-pos pos))
+         new-s (if (coll-end? loc pos)
+                 (if-let [barfee (-> loc z/down)]
+                   (->> barfee pe/barf-backward z/root-string)
+                   s)
+                 (->> loc pe/barf-backward z/root-string))]
+     ;; TODO: do we need extra cursor management stuff like we do in barf forward?
      (doto buf
        (.clear)
        (.write new-s)
