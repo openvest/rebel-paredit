@@ -123,20 +123,14 @@
     [(str (subs s 0 cur) (subs s end-paren))]
     [(str (subs s 0 cur) (subs s next-newline))]))
 
-(defn k1
-  [s cur]
-  (let [kill-end (or (str/index-of s \newline cur) (count s))
-        tokens (tokenize/tag-sexp-traversal s)
-        trim-end (fn [end]
-                   (->> (count (re-find #"^ *" (subs s (inc end) )))
-                        (+ end)
-                        (subs s )))]
-    (->> (or (some-> tokens
-                    (SUT/find-open-sexp-start kill-end)
-                    ((fn [[_ beg end _]]
-                       (when (>= beg cur)
-                         (-> (SUT/find-open-sexp-end tokens kill-end)
-                             (nth 2))))))
-             kill-end)
-         trim-end
-         (str (subs s 0 cur)))))
+
+;; slurp quoted
+(let [target (-> (z/of-string "(require '[]this)" {:track-position? true})
+                 (z/down)
+                 z/right)]
+  (->> target
+       z/right
+       ((juxt z/remove z/node))
+       (apply z/append-child)
+       z/root-string))
+

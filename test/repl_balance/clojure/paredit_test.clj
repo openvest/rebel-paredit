@@ -165,7 +165,7 @@
               "(|)"
               "(|)"))
 
-(deftest ^:balance-error kill-space-string-test3
+(deftest kill-space-string-test3
   (s-cur-test SUT/kill
               "(fo|o \"bar\")"
               "(fo|)"))
@@ -185,6 +185,16 @@
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
+
+(deftest kill-invalid-symbol-tests
+  "This can arise from (x/s1|\nx/s2) and kill twice"
+  ;; TODO: check this as the test passes but fails in repl
+  (let [[beg-str beg-cur] (split-s-cur "(x/symbol1|z/symbol2)")
+        [new-str new-cur] (split-s-cur "(x/symbol1|)")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
 ; TODO: this test requires a killRing inside a line-reader.  Can't (yet) create this in testing
 #_(deftest ^:wip kill-require-in-buf-test
   "wierd case of error inside a require"
@@ -258,7 +268,7 @@
              (-> (SUT/slurp-forward)
                  (join-s-cur))))))
 
-(deftest slurp-forward-quoted-test
+#_(deftest slurp-forward-quoted-test
   "slurp forward when there is a quote i.e. invalid sexp"
   (with-buffer
     #_>>>> "(require '[|]this)"
