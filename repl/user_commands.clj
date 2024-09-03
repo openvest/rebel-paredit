@@ -10,7 +10,7 @@
 ;; add command doesn't allow passing of params so use defmethod command
 (defmethod commands/command :repl/ls [[_ dir]]
   (let [dir (or dir ".")]
-    (->> (file-seq (clojure.java.io/file (strdir)))
+    (->> (file-seq (clojure.java.io/file (str dir)))
          (filter #(and (.isFile %)
                        (nil? (re-find #"/\\." (str %)))))
          (mapv str)

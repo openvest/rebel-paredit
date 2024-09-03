@@ -164,7 +164,7 @@ If you are using `lein` you may need to use `lein trampoline`."
 
 (defn key-map-name [key-map]
   (when-let [res (first (filter #(and (= (val %) key-map)
-                            (not= (key %) "main"))
+                                      (not= (key %) "main"))
                                 (key-maps)))]
     (key res)))
 

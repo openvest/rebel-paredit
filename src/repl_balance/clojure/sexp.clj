@@ -205,3 +205,26 @@
    ((fn [[a b]]
       (when (= a ["(" 0 1 :open-paren])
         b)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(def no-space-before
+  "set of characters which do NOT get an extra space
+   before an opening delimiter"
+  (set (seq " ([{#@`'^\"")))
+
+(defn space-before
+  "function taking a char and determining if a space should be added
+   before an opening delimiter"
+  [c]
+  (when-not (no-space-before c) " "))
+
+(def no-space-after
+  "set of characters which do NOT get an extra space
+   after a closing delimiter"
+  (set (seq " )]}")))
+
+(defn space-after
+  "function taking a char and determining if a space should be added
+   before a closing delimiter"
+  [c]
+  (when-not (no-space-after c) " "))

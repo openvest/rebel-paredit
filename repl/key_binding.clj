@@ -1,8 +1,12 @@
 (ns key-binding
-  (:require [repl-balance.jline-api :as j]
+  (:require [repl-balance.jline-api :as j :refer [*line-reader* create-widget register-widget]]
+            [repl-balance.clojure.line-reader]
+            [repl-balance.clojure.paredit :as paredit]
             [clojure.pprint :refer [pprint]])
   (:import [org.jline.keymap KeyMap]))
-"when updating keybindings, ::j/keybindings is generic/builtin and :key-bindings is user level/overrides"
+;; when updating keybindings, ::j/keybindings is generic/builtin
+;;      and :key-bindings is user level/overrides
+
 ;; bind a key to a widget name
 ;; why doesn't this work
 ;(swap! j/*line-reader* update-in  [:key-bindings :main]   (fnil conj []) ["U" "clojure-force-accept-line"])
@@ -19,6 +23,36 @@
 (swap! j/*line-reader* update-in [::j/key-bindings :emacs]
        #((fnil conj []) %1 (first %2))
        [(apply str (map char [24 24])) "beginning-of-buffer"])
+(j/apply-key-bindings!)
+
+
+(swap! j/*line-reader* update-in [::j/key-bindings :emacs]
+       #((fnil conj []) %1 (first %2))
+       [(apply str (map char [24 24])) "paredit-open-round"])
+(j/apply-key-bindings!)
+
+
+;; first create a widget
+;; create-widget is a macro that creats a function
+;; that function will take a line-reader and
+;; create a method (using reify) to execute
+(defn paredit-open-round-fn
+  ([] (paredit-open-round-fn j/*buffer*))
+  ([buf] (doto buf
+           (.write "(pe-open) ")
+           (.move -2))))
+
+(def paredit-open-round
+ (create-widget
+   ;(paredit-open-round-fn)
+   (paredit/open-round)
+   true))
+;; register the widget
+(register-widget "paredit-open-round" paredit-open-round )
+
+;; bind a key to call the widget
+(j/key-binding :emacs "(" "paredit-open-round")
+;; apply the bindings
 (j/apply-key-bindings!)
 
 ;;;;
@@ -71,6 +105,9 @@
 (let [km (.get (.getKeyMaps line-reader) "emacs")]
      (.readBinding line-reader km)) ;; returns a Reference
 ;; enter above then hit ctrl-Y
+;; shorter version
+(->> (j/key-map "emacs")
+     (.readBinding *line-reader*))
 
 (let [km (.get (.getKeyMaps line-reader) "main")
       wname (.name (.readBinding line-reader km))
@@ -82,6 +119,7 @@
 (str (.getBuffer line-reader))
 
 ;; show all bindings in a keymap
+;; maybe forget this as :repl/key-bindings does a better job
 (defn show-key-bindings
   "like (show-key-bindings \"emacs\") "
   [map-name]

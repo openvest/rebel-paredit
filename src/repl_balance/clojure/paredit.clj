@@ -521,7 +521,7 @@
         is-string? (string? sexpr)
         s (cond-> sexpr (not is-string?) str)
         ;; if this is a string node the cursor input will be one too large
-        ;; to accommodate the opening double-quote
+        ;; to accommodate the opening doublequote
         cur (if is-string? (dec c) c)]
     (cond->> [(subs s 0 cur) (subs s cur)]
              (not is-string?) (map edn/read-string)
@@ -647,7 +647,118 @@
 
 
 ;; autopairing
-(defn open-round [s cur]   [s cur])
-(defn close-round [s cur]  [s cur])
-(defn open-square [s cur]  [s cur])
-(defn close-square [s cur] [s cur])
+(defn is-literal
+  [s c]
+  (some->> (tokenize/tag-syntax s)
+           (keep (fn [[_ beg end tag]]
+                   (when (and (> c beg)
+                              (< c end))
+                     tag)))
+           first
+           #{:line-comment :string-literal}))
+
+(defn open-round
+  ([] (open-round j/*buffer*))
+  ([buf] (let [s   (str buf)
+               cur (.cursor buf)
+               [new-s new-cur] (open-round s cur)]
+           (doto buf
+             (.clear)
+             (.write new-s)
+             (.cursor new-cur))))
+  ([^String s ^Integer c]
+   (if (is-literal s c)
+     [(str (subs s 0 c) "(" (subs s c)) (inc c)]
+     (let [space-before (when (> c 0)
+                          (-> (.charAt s (dec c))
+                              (sexp/space-before)))
+           space-after (when (< c (count s))
+                         (-> (.charAt s c)
+                             (sexp/space-after)))]
+       [(str (subs s 0 c) space-before "()" space-after (subs s c))
+        (+ c (if space-before 2 1))]))))
+
+(defn open-square
+  ;; FIXME: this is very wrong to not have generalized with open-round
+  ([] (open-square j/*buffer*))
+  ([buf] (let [s   (str buf)
+               cur (.cursor buf)
+               [new-s new-cur] (open-square s cur)]
+           (doto buf
+             (.clear)
+             (.write new-s)
+             (.cursor new-cur))))
+  ([^String s ^Integer c]
+   (if (is-literal s c)
+     [(str (subs s 0 c) "[" (subs s c)) (inc c)]
+     (let [space-before (when (> c 0)
+                          (-> (.charAt s (dec c))
+                              (sexp/space-before)))
+           space-after (when (< c (count s))
+                         (-> (.charAt s c)
+                             (sexp/space-after)))]
+       [(str (subs s 0 c) space-before "[]" space-after (subs s c))
+        (+ c (if space-before 2 1))]))))
+
+(defn open-curly
+  ;; FIXME: this is very wrong to not have generalized with open-round
+  ([] (open-curly j/*buffer*))
+  ([buf] (let [s   (str buf)
+               cur (.cursor buf)
+               [new-s new-cur] (open-curly s cur)]
+           (doto buf
+             (.clear)
+             (.write new-s)
+             (.cursor new-cur))))
+  ([^String s ^Integer c]
+   (if (is-literal s c)
+     [(str (subs s 0 c) "{" (subs s c)) (inc c)]
+     (let [space-before (when (> c 0)
+                          (-> (.charAt s (dec c))
+                              (sexp/space-before)))
+           space-after (when (< c (count s))
+                         (-> (.charAt s c)
+                             (sexp/space-after)))]
+       [(str (subs s 0 c) space-before "{}" space-after (subs s c))
+        (+ c (if space-before 2 1))]))))
+
+(defn doublequote
+  ;; a bit different from other autopairing as the open and close are bound to the same key
+  ([] (doublequote j/*buffer*))
+  ([buf] (let [s   (str buf)
+               cur (.cursor buf)
+               [new-s new-cur] (doublequote s cur)]
+           (doto buf
+             (.clear)
+             (.write new-s)
+             (.cursor new-cur))))
+  ([^String s ^Integer c]
+   (if (is-literal s c)
+     [(str (subs s 0 c) "\\\"" (subs s c)) (+ 2 c)]
+     (let [space-before (when (> c 0)
+                          (-> (.charAt s (dec c))
+                              (sexp/space-before)))
+           space-after (when (< c (count s))
+                         (-> (.charAt s c)
+                             (sexp/space-after)))]
+       [(str (subs s 0 c) space-before "\"\"" space-after (subs s c))
+        (+ c (if space-before 2 1))]))))
+
+(defn close-round
+  ([] (close-round j/*buffer*))
+  ([buf] (let [s   (str buf)
+               cur (.cursor buf)
+               [new-s new-cur] (close-round s cur)]
+           (doto buf
+             (.clear)
+             (.write new-s)
+             (.cursor new-cur))))
+  ([^String s ^Integer c]
+   (if (is-literal s c)
+     [(str (subs s 0 c) ")" (subs s c)) (inc c)]
+     (if-let [[_ _ end _] (some-> (tokenize/tag-sexp-traversal s)
+                                  (sexp/find-open-sexp-end c))]
+       ;; TODO trim whitespace before the closer to be paredit-reference-card compliant
+       [s end]
+       ;; TODO if not balanced and this could balance it, allow the closer
+       [s (count s)]))))

@@ -10,7 +10,7 @@
             [clojure.test :refer :all]))
 
 ;;;;;;;;;; Basic Insertion Commands ;;;;;;;;;;
-#_(deftest ^:autopair paredit-open-round
+(deftest paredit-open-round
   (s-cur-test SUT/open-round
               "(a b |c d)"
               "(a b (|) c d)")
@@ -18,7 +18,7 @@
               "(foo \"bar |baz\" quux)"
               "(foo \"bar (|baz\" quux)"))
 
-#_(deftest ^:autopair paredit-close-round
+(deftest  ^:whitespace paredit-close-round
   (s-cur-test SUT/close-round
               "(a b |c  )"
               "(a b c)|")
@@ -33,7 +33,7 @@
   "(defn f (x)\n  |)"
   )
 
-#_(deftest ^:autopair paredit-open-square
+(deftest paredit-open-square
   (s-cur-test SUT/open-square
               "(a b |c d)"
               "(a b [|] c d)")
@@ -41,19 +41,34 @@
               "(foo \"bar |baz\" quux)"
               "(foo \"bar [|baz\" quux)"))
 
-#_(deftest ^:autopair paredit-close-square
-  (s-cur-test SUT/close-square
+(deftest ^:whitespace paredit-close-square
+  (s-cur-test SUT/close-round
               "(define-key keymap [frob|  ] 'frobnicate)"
               "(define-key keymap [frob]| 'frobnicate)"))
 
-#_(deftest ^:autopair paredit-doublequote
+;; tests for open and close curly are not part of the paredit reference cardinal
+;; but are a necessary addition for clojure
+(deftest paredit-open-curly
+  (s-cur-test SUT/open-curly
+              "(a b |c d)"
+              "(a b {|} c d)")
+  (s-cur-test SUT/open-curly
+              "(foo \"bar |baz\" quux)"
+              "(foo \"bar {|baz\" quux)"))
 
-  "(frob grovel |full lexical)"
-  "(frob grovel \"|\" full lexical)"
+(deftest ^:whitespace paredit-close-square
+  (s-cur-test SUT/close-round
+              "(define-key keymap [frob|  ] 'frobnicate)"
+              "(define-key keymap [frob]| 'frobnicate)"))
 
-  "(foo \"bar |baz\" quux)"
-  "(foo \"bar \"|baz\" quux)"
-  )
+(deftest paredit-doublequote
+  (s-cur-test SUT/doublequote
+              "(frob grovel |full lexical)"
+              "(frob grovel \"|\" full lexical)")
+  (s-cur-test SUT/doublequote
+              "(foo \"bar |baz\" quux)"
+              "(foo \"bar \\\"|baz\" quux)"                 ;; need to fix how str-split-test counts cursor position??
+              ))
 
 #_(deftest ^:autopair paredit-meta-doublequote
 

@@ -343,6 +343,14 @@
                (testing (str "barf-forward-str with: "orig)
                  (is (= :no-error modified))))))))
 
+(deftest barf-forward-edge-case1-test
+  "wierd edge-case 2here barf fails"
+  (with-buffer
+    #_>>>> "[1 |[3] 4]"
+    (is (= "[1 |[3]] 4"
+           (-> (SUT/slurp-backward)
+               (join-s-cur))))))
+
 (deftest slurp-backward-test
   (with-buffer
     #_>>>> "[[1 2] [|3 4] 5]"
@@ -370,6 +378,13 @@
     (is (= "[1 2 [3|]]"
            (-> (SUT/barf-backward)
                (join-s-cur))))))
+
+#_(deftest slurp-backward-from-empty-coll-test
+    (with-buffer
+      #_>>>> "[1 [|] 2]"
+      (is (= "[[1|] 2]"
+             (-> (SUT/slurp-backward)
+                 (join-s-cur))))))
 
 ;; splice and split tests
 

@@ -482,6 +482,37 @@
    true))
 
 ;; -----------------------------------------
+;; autopairing widgets
+;; -----------------------------------------
+;; autpairing here should eventually replace the java AutopairWidgets
+
+(def paredit-open-round
+  (create-widget
+    (paredit/open-round)
+    true))
+
+(def paredit-open-square
+  (create-widget
+    (paredit/open-square)
+    true))
+
+(def paredit-open-curly
+  (create-widget
+    (paredit/open-curly)
+    true))
+
+(def paredit-close-round
+  (create-widget
+    (paredit/close-round)
+    true))
+
+(def paredit-doublequote
+  (create-widget
+    (paredit/doublequote)
+    true))
+
+
+;; -----------------------------------------
 ;; paredit widgets
 ;; -----------------------------------------
 
@@ -495,9 +526,15 @@
     (let [join-s-cur (requiring-resolve 'repl-balance.test-helpers/join-s-cur)
           s (str api/*buffer*)
           cur (.cursor api/*buffer*)
-          s1-cur1 (apply join-s-cur (take 2 (paredit/kill-orig s cur)))
-          s2-cur2 (apply join-s-cur (take 2 (paredit/kill s cur)))]
-     (paredit/kill-in-buff)
+          s1-cur1 (try
+                    (apply join-s-cur (take 2 (paredit/kill-orig s cur)))
+                    (catch Exception e (ex-cause e )))
+          s2-cur2 (try
+                    (apply join-s-cur (take 2 (paredit/kill s cur)))
+                    (catch Exception e (ex-cause e )))]
+      (try
+        (paredit/kill-in-buff)
+        (catch Exception e))
      (if (not= s1-cur1 s2-cur2)
       (api/display-message (str (pr-str (join-s-cur s cur)) "\n"
                                 (pr-str s1-cur1) "\n"
@@ -564,16 +601,17 @@
         pairs (api/get-private-field autopair "pairs")
         ]
     (swap! line-reader assoc :autopair-widgets autopair)
-    ;; default behavior it to now autopar a lot of stuff but in lispy languages this is a problem
+    ;; default behavior it to now autopair a lot of stuff but in lispy languages this is a problem
     (.put (get-private-field autopair "LBOUNDS") "all", "")
     (.put (get-private-field autopair "RBOUNDS") "all", "")
-    ;; we added curly brackes with the arg above bot clojure should not autopari ' or`
+    ;; We added curly braces with the arg above. Clojure should not autoparir ' or`
     (doto pairs
       (.remove "'")
       (.remove "`")
       (.remove " "))
+    ;; we now disable by default as we move to newer paredit autopairing
     (doto autopair
-      (.enable))))
+      (.disable))))
 
 (def indent-or-complete-widget
   (create-widget
@@ -881,6 +919,12 @@
     (register-widget "end-of-buffer"              end-of-buffer)
     (register-widget "beginning-of-buffer"        beginning-of-buffer)
 
+    (register-widget "paredit-open-round" paredit-open-round )
+    (register-widget "paredit-open-square" paredit-open-square )
+    (register-widget "paredit-open-curly" paredit-open-curly )
+    (register-widget "paredit-close-round" paredit-close-round )
+    (register-widget "paredit-doublequote" paredit-doublequote )
+
     (register-widget "paredit-kill"               paredit-kill)
     (register-widget "paredit-slurp-forward"      paredit-slurp-forward)
     (register-widget "paredit-slurp-backward"     paredit-slurp-backward)
@@ -909,6 +953,14 @@
 
 (defn bind-paredit-widgets [km-name]
   (doto km-name
+    (key-binding "(" "paredit-open-round")
+    (key-binding "[" "paredit-open-square")
+    (key-binding "{" "paredit-open-curly")
+    (key-binding "\"" "paredit-doublequote")
+    (key-binding ")" "paredit-close-round")
+    (key-binding "]" "paredit-close-round")
+    (key-binding "}" "paredit-close-round")
+
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
     (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp") ; osx esc-( works but not alt or command (
     (key-binding (str (KeyMap/alt \s)) "paredit-splice")
