@@ -511,6 +511,16 @@
     (paredit/doublequote)
     true))
 
+(def paredit-backward-delete-char
+  (create-widget
+    (paredit/backward-delete-char)
+    true))
+
+(def paredit-delete-char
+  (create-widget
+    (paredit/delete-char)
+    true))
+
 
 ;; -----------------------------------------
 ;; paredit widgets
@@ -924,6 +934,8 @@
     (register-widget "paredit-open-curly" paredit-open-curly )
     (register-widget "paredit-close-round" paredit-close-round )
     (register-widget "paredit-doublequote" paredit-doublequote )
+    (register-widget "backward-delete-char" paredit-backward-delete-char )
+    (register-widget "delete-char" paredit-delete-char )
 
     (register-widget "paredit-kill"               paredit-kill)
     (register-widget "paredit-slurp-forward"      paredit-slurp-forward)

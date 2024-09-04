@@ -105,40 +105,53 @@
   )
 
 ;;;;;;;;;; Deleting & Killing ;;;;;;;;;;
+(let* [vec__33146 (repl-balance.test-helpers/split-s-cur "(foo (|) bar)")
+       orig-s__12520__auto__ (clojure.core/nth vec__33146 0 nil)
+       orig-cur__12521__auto__ (clojure.core/nth vec__33146 1 nil)
+       vec__33149 (repl-balance.test-helpers/split-s-cur "(foo | bar)")
+       target-s__12522__auto__ (clojure.core/nth vec__33149 0 nil)
+       target-cur__12523__auto__ (clojure.core/nth vec__33149 1 nil)
+       vec__33152 (SUT/delete-char orig-s__12520__auto__ orig-cur__12521__auto__)
+       modified-s__12524__auto__ (clojure.core/nth vec__33152 0 nil)
+       modified-cur__12525__auto__ (clojure.core/nth vec__33152 1 nil)]
+  (clojure.test/testing
+    (clojure.core/str "testing " (quote SUT/delete-char) "  with: " "(foo (|) bar)")
+    (clojure.test/is (clojure.core/= target-s__12522__auto__ modified-s__12524__auto__))
+    (clojure.test/is (clojure.core/= target-cur__12523__auto__ modified-cur__12525__auto__))))
 
-#_(deftest paredit-forward-delete
-  (s-cur-test SUT/paredit-delete-forward
+(deftest paredit-forward-delete
+  (s-cur-test SUT/delete-char
               "(quu|x \"zot\")"
-              "(quu| \"zot\")"
-
+              "(quu| \"zot\")")
+  (s-cur-test SUT/delete-char
               "(quux |\"zot\")"
+              "(quux \"|zot\")")
+  (s-cur-test SUT/delete-char
               "(quux \"|zot\")"
-
-              "(quux \"|zot\")"
-              "(quux \"|ot\")"
-
+              "(quux \"|ot\")")
+  (s-cur-test SUT/delete-char
               "(foo (|) bar)"
-              "(foo | bar)"
-
+              "(foo | bar)")
+  (s-cur-test SUT/delete-char
               "|(foo bar)"
               "(|foo bar)"))
 
-#_(deftest paredit-delete-backward
-    "(\"zot\" q|uux)"
-    "(\"zot\" |uux)"
-
-    "(\"zot\"| quux)"
-    "(\"zot|\" quux)"
-
-    "(\"zot|\" quux)"
-    "(\"zo|\" quux)"
-
-    "(foo (|) bar)"
-    "(foo | bar)"
-
-    "(foo bar)|"
-    "(foo bar|)"
-  )
+(deftest paredit-delete-backward
+  (s-cur-test SUT/backward-delete-char
+              "(\"zot\" q|uux)"
+              "(\"zot\" |uux)")
+  (s-cur-test SUT/backward-delete-char
+              "(\"zot\"| quux)"
+              "(\"zot|\" quux)")
+  (s-cur-test SUT/backward-delete-char
+              "(\"zot|\" quux)"
+              "(\"zo|\" quux)")
+  (s-cur-test SUT/backward-delete-char
+              "(foo (|) bar)"
+              "(foo | bar)")
+  (s-cur-test SUT/backward-delete-char
+              "(foo bar)|"
+              "(foo bar|)"))
 
 (deftest paredit-kill
   (s-cur-test SUT/kill

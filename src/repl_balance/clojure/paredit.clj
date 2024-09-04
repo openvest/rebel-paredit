@@ -8,7 +8,8 @@
             [rewrite-clj.custom-zipper.utils :as rczu]
             [repl-balance.clojure.tokenizer :as tokenize]
             [clojure.string :as str]
-            [clojure.edn :as edn]))
+            [clojure.edn :as edn])
+  (:import [org.jline.reader.impl LineReaderImpl BufferImpl]))
 
 ;; string based functions
 
@@ -647,7 +648,7 @@
 
 
 ;; autopairing
-(defn is-literal
+(defn is-literal?
   [s c]
   (some->> (tokenize/tag-syntax s)
            (keep (fn [[_ beg end tag]]
@@ -667,7 +668,7 @@
              (.write new-s)
              (.cursor new-cur))))
   ([^String s ^Integer c]
-   (if (is-literal s c)
+   (if (is-literal? s c)
      [(str (subs s 0 c) "(" (subs s c)) (inc c)]
      (let [space-before (when (> c 0)
                           (-> (.charAt s (dec c))
@@ -689,7 +690,7 @@
              (.write new-s)
              (.cursor new-cur))))
   ([^String s ^Integer c]
-   (if (is-literal s c)
+   (if (is-literal? s c)
      [(str (subs s 0 c) "[" (subs s c)) (inc c)]
      (let [space-before (when (> c 0)
                           (-> (.charAt s (dec c))
@@ -711,7 +712,7 @@
              (.write new-s)
              (.cursor new-cur))))
   ([^String s ^Integer c]
-   (if (is-literal s c)
+   (if (is-literal? s c)
      [(str (subs s 0 c) "{" (subs s c)) (inc c)]
      (let [space-before (when (> c 0)
                           (-> (.charAt s (dec c))
@@ -733,7 +734,7 @@
              (.write new-s)
              (.cursor new-cur))))
   ([^String s ^Integer c]
-   (if (is-literal s c)
+   (if (is-literal? s c)
      [(str (subs s 0 c) "\\\"" (subs s c)) (+ 2 c)]
      (let [space-before (when (> c 0)
                           (-> (.charAt s (dec c))
@@ -746,19 +747,54 @@
 
 (defn close-round
   ([] (close-round j/*buffer*))
-  ([buf] (let [s   (str buf)
-               cur (.cursor buf)
-               [new-s new-cur] (close-round s cur)]
-           (doto buf
-             (.clear)
-             (.write new-s)
-             (.cursor new-cur))))
+  ([buf] (if (is-literal? (str buf) (.cursor buf))
+           (doto buf (.write (.getLastBinding j/*line-reader*)))
+           (let [[_ _ end _] (some-> (tokenize/tag-sexp-traversal (str buf))
+                                     (sexp/find-open-sexp-end (.cursor buf)))]
+             (doto buf (.cursor end))))))
+
+(defn backward-delete-char
+  ([] (backward-delete-char j/*buffer*))
+  ([buf] (condp #(%1 %2) (char (.prevChar buf))
+           #{\) \] \}} (if (is-literal? (str buf) (.cursor buf))
+                         (doto buf (.backspace))
+                         (doto buf (.move -1)))
+           {\( \)
+            \[ \]
+            \{ \}} :>> (fn [closer]
+                                    (cond
+                                      (is-literal? (str buf) (.cursor buf))
+                                      (doto buf (.backspace))
+                                      (= closer (char (.currChar buf)))
+                                      (doto buf (.backspace) (.delete))
+                                      :default buf))
+           (doto buf (.backspace))))
   ([^String s ^Integer c]
-   (if (is-literal s c)
-     [(str (subs s 0 c) ")" (subs s c)) (inc c)]
-     (if-let [[_ _ end _] (some-> (tokenize/tag-sexp-traversal s)
-                                  (sexp/find-open-sexp-end c))]
-       ;; TODO trim whitespace before the closer to be paredit-reference-card compliant
-       [s end]
-       ;; TODO if not balanced and this could balance it, allow the closer
-       [s (count s)]))))
+   (let [buf (doto (BufferImpl.)
+               (.write s)
+               (.cursor c))]
+     (backward-delete-char buf)
+     [(str buf) (.cursor buf)])))
+
+(defn delete-char
+  ([] (delete-char j/*buffer*))
+  ([buf] (condp #(%1 %2) (char (.currChar buf))
+           #{\( \[ \{} (if (is-literal? (str buf) (.cursor buf))
+                         (doto buf (.delete))
+                         (doto buf (.move 1)))
+           {\) \(
+            \] \[
+            \} \{} :>> (fn [opener]
+                         (cond
+                           (is-literal? (str buf) (.cursor buf))
+                           (doto buf (.delete))
+                           (= opener (char (.prevChar buf)))
+                           (doto buf (.move -1) (.delete 2))
+                           :default buf))
+           (doto buf (.delete))))
+  ([^String s ^Integer c]
+   (let [buf (doto (BufferImpl.)
+               (.write s)
+               (.cursor c))]
+     (delete-char buf)
+     [(str buf) (.cursor buf)])))
