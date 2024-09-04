@@ -89,6 +89,20 @@
               (pprint (keys tools/color-themes)))))
       (swap! api/*line-reader* assoc :color-theme new-theme))))
 
+(defmethod command :repl/widgets [[_ widget-name]]
+  (->> (.getWidgets api/*line-reader*)
+       (map (juxt #(.getKey %) #(str (.getValue %))))
+       (filter #(re-find (re-pattern (or (str widget-name) "\\w")) (first %)))
+       ;;(map #(.getKey %))
+       ;;(filter #(re-find (re-pattern (or (str widget-name) "\\w")) %))
+       (sort)
+       clojure.pprint/pprint))
+
+(defmethod command-doc :repl/widgets [_]
+  "list currently registered widgets.
+   Widgets are typically bound to keys so look for the widget with:
+   \":repl/key-bindings <widget-name>\" ")
+
 (defmethod command-doc :repl/key-bindings [_]
   "With an argument displays a search of the current key bindings
 Without any arguments displays all the current key bindings")

@@ -972,6 +972,7 @@
     (key-binding ")" "paredit-close-round")
     (key-binding "]" "paredit-close-round")
     (key-binding "}" "paredit-close-round")
+    (key-binding (str (KeyMap/ctrl \D)) "delete-char")      ;; replaces delete-char-or-list binding
 
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
     (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp") ; osx esc-( works but not alt or command (

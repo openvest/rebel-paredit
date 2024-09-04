@@ -31,19 +31,7 @@
 (defmethod commands/command-doc :repl/ls [_] "list files for a directory")
 
 ;; add command doesn't allow passing of params so use defmethod command
-(defmethod commands/command :repl/widgets [[_ widget-name]]
-  (->> (.getWidgets j/*line-reader*)
-       (map (juxt #(.getKey %) #(str (.getValue %))))
-       (filter #(re-find (re-pattern (or (str widget-name) "\\w")) (first %)))
-       ;;(map #(.getKey %))
-       ;;(filter #(re-find (re-pattern (or (str widget-name) "\\w")) %))
-       (sort)
-       clojure.pprint/pprint))
 
-(defmethod commands/command-doc :repl/widgets [_]
- "list currently registered widgets.
-  Widgets are typically bound to keys so look for the widget with:
-  \":repl/key-bindings <widget-name>\" ")
 
 (comment
 ;; elisp function/command to paste last repl-balance history command into emacs
