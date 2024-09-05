@@ -265,7 +265,7 @@
     (is (= "[[1 |2 [3 4]] 5]"
            (-> (SUT/slurp-forward)
                (join-s-cur))))))
-[1 [3 4]]
+
 (deftest slurp-forward-tail-test
   "slurp forward when at the end of a list type node
    (i.e. no locator there)"
@@ -274,6 +274,15 @@
       (is (= "[[1 2| [3 4]] 5]"
              (-> (SUT/slurp-forward)
                  (join-s-cur))))))
+
+(deftest slurp-forward-multiline-align-test
+  "slurp forward where auto-align gets things wrong"
+  (with-buffer
+    #_>>>> "[foo bar\n      baz|] (and a b)"
+    (is (= "[foo bar\n baz (and a b)]"
+           (-> (SUT/slurp-forward)
+               (join-s-cur))))))
+
 
 #_(deftest slurp-forward-quoted-test
   "slurp forward when there is a quote i.e. invalid sexp"
@@ -422,7 +431,7 @@
            (-> (SUT/splice)
                (join-s-cur))))))
 
-(deftest splice-at-tail-test
+(deftest ^:cursor-pos splice-at-tail-test
   (with-buffer
     #_>>>> "[[1 2|] 3]"
     (is (= "[1 2 |3]"

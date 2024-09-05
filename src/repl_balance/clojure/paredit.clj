@@ -515,7 +515,7 @@
                            (z/up loc))))
                        (pe/splice)
                        (z/root-string))]
-         [new-s cur])))))
+         [new-s (dec cur)])))))
 
 (defn split-node [n c]
   (let [sexpr (n/sexpr n)
@@ -767,20 +767,32 @@
 
 (defn backward-delete-char
   ([] (backward-delete-char j/*buffer*))
-  ([buf] (condp #(%1 %2) (char (.prevChar buf))
-           #{\) \] \}} (if (is-literal? (str buf) (.cursor buf))
-                         (doto buf (.backspace))
-                         (doto buf (.move -1)))
-           {\( \)
-            \[ \]
-            \{ \}} :>> (fn [closer]
-                                    (cond
-                                      (is-literal? (str buf) (.cursor buf))
-                                      (doto buf (.backspace))
-                                      (= closer (char (.currChar buf)))
-                                      (doto buf (.backspace) (.delete))
-                                      :default buf))
-           (doto buf (.backspace))))
+  ([buf] (let [s (str buf)
+               cur (.cursor buf)
+               literal (is-literal? s cur)]
+           (condp #(%1 %2) (char (.prevChar buf))
+             #{\) \] \}} (if literal
+                           (doto buf (.backspace))
+                           (doto buf (.move -1)))
+             {\( \)
+              \[ \]
+              \{ \}} :>> (fn [closer]
+                           (cond
+                             literal
+                             (doto buf (.backspace))
+                             (= closer (char (.currChar buf)))
+                             (doto buf (.backspace) (.delete))
+                             :default buf))
+             #{\"} (cond
+                     (and (pos? cur)
+                          (not literal)
+                          (is-literal? s (dec cur)))
+                     (doto buf (.move -1))
+                     (and (= \" (char (.currChar buf)))
+                          (not (is-literal? s (inc cur))))
+                     (doto buf (.move -1) (.delete 2))
+                     :default buf)
+             (doto buf (.backspace)))))
   ([^String s ^Integer c]
    (let [buf (doto (BufferImpl.)
                (.write s)
@@ -790,20 +802,29 @@
 
 (defn delete-char
   ([] (delete-char j/*buffer*))
-  ([buf] (condp #(%1 %2) (char (.currChar buf))
-           #{\( \[ \{} (if (is-literal? (str buf) (.cursor buf))
-                         (doto buf (.delete))
-                         (doto buf (.move 1)))
-           {\) \(
-            \] \[
-            \} \{} :>> (fn [opener]
-                         (cond
-                           (is-literal? (str buf) (.cursor buf))
+  ([buf] (let [s (str buf)
+               cur (.cursor buf)
+               literal (is-literal? s cur)]
+           (condp #(%1 %2) (char (.currChar buf))
+             #{\( \[ \{} (if literal
                            (doto buf (.delete))
-                           (= opener (char (.prevChar buf)))
-                           (doto buf (.move -1) (.delete 2))
-                           :default buf))
-           (doto buf (.delete))))
+                           (doto buf (.move 1)))
+             {\) \(
+              \] \[
+              \} \{} :>> (fn [opener]
+                           (cond
+                             literal
+                             (doto buf (.delete))
+                             (= opener (char (.prevChar buf)))
+                             (doto buf (.move -1) (.delete 2))
+                             :default buf))
+             #{\"} (cond
+                     (or (zero? cur) (not literal)) (doto buf (.move 1))
+                     (and (= \" (char (.prevChar buf)))
+                          (not (is-literal? s (dec cur))))
+                     (doto buf (.move -1) (.delete 2))
+                     :default buf)
+             (doto buf (.delete)))))
   ([^String s ^Integer c]
    (let [buf (doto (BufferImpl.)
                (.write s)

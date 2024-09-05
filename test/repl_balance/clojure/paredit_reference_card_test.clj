@@ -41,7 +41,7 @@
               "(foo \"bar |baz\" quux)"
               "(foo \"bar [|baz\" quux)"))
 
-(deftest ^:whitespace paredit-close-square
+(deftest paredit-close-square
   (s-cur-test SUT/close-round
               "(define-key keymap [frob|  ] 'frobnicate)"
               "(define-key keymap [frob]| 'frobnicate)"))
@@ -111,12 +111,17 @@
   (s-cur-test SUT/delete-char
               "(quu|x \"zot\")"
               "(quu| \"zot\")")
+  ; in front of an opening doublequote
   (s-cur-test SUT/delete-char
               "(quux |\"zot\")"
               "(quux \"|zot\")")
   (s-cur-test SUT/delete-char
               "(quux \"|zot\")"
               "(quux \"|ot\")")
+  ; in front of an closing doublequote
+  (s-cur-test SUT/delete-char
+              "(quux \"zot|\")"
+              "(quux \"zot|\")")
   (s-cur-test SUT/delete-char
               "(foo (|) bar)"
               "(foo | bar)")
@@ -128,12 +133,17 @@
   (s-cur-test SUT/backward-delete-char
               "(\"zot\" q|uux)"
               "(\"zot\" |uux)")
+  ;; backward facing a closing doublequote
   (s-cur-test SUT/backward-delete-char
               "(\"zot\"| quux)"
               "(\"zot|\" quux)")
   (s-cur-test SUT/backward-delete-char
               "(\"zot|\" quux)"
               "(\"zo|\" quux)")
+  ;; backward facing an opening doublequote
+  (s-cur-test SUT/backward-delete-char
+              "(\"|zot\" quux)"
+              "(\"|zot\" quux)")
   (s-cur-test SUT/backward-delete-char
               "(foo (|) bar)"
               "(foo | bar)")
@@ -190,7 +200,7 @@
     "(foo |bar baz)"
     "(foo (|bar) baz)"))
 
-(deftest ^:cursor-pos paredit-splice-sexp
+(deftest paredit-splice-sexp
   (buf-test SUT/splice
             "(foo (bar| baz) quux)"
             "(foo bar| baz quux)"))
@@ -240,7 +250,7 @@
 
 ;;;;;;;;;; Miscellaneous Commands ;;;;;;;;;;
 
-(deftest ^:cursor-pos paredit-split-sexp
+(deftest paredit-split-sexp
   (buf-test SUT/split
             "(hello| world)"
             "(hello)| (world)"))
