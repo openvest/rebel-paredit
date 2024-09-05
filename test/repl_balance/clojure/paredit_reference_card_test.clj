@@ -29,8 +29,8 @@
 #_(deftest ^:autopair paredit-close-round-and-newline
   "Not sure about this example. It's more lispy than clojure
   Maybe work with square brackets?"
-  "(defn f (x|  ))"
-  "(defn f (x)\n  |)"
+  "(defn f [x|  ])"
+  "(defn f [x]\n  |)"
   )
 
 (deftest paredit-open-square

@@ -570,9 +570,8 @@
      ;; TODO: better cursor logic.  Maybe get it from the modified zloc above.
      [new-s (inc cur) #_(cond-> cur inside-string? inc)])))
 
-(def risen (atom {}))
 (defn raise
-  ([] (split j/*buffer*))
+  ([] (raise j/*buffer*))
   ([buf]
    (let [cur (.cursor buf)
          s   (str buf)
@@ -584,7 +583,6 @@
                    (pe/raise)
                    (z/root-string))
          new-cur (str-find-cursor s (-> loc z/up z/node meta))]
-     (swap! risen assoc :s s :old-node (z/node loc))
      (doto buf
        (.clear)
        (.write new-s)
