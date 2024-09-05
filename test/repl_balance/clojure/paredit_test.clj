@@ -343,12 +343,13 @@
                (testing (str "barf-forward-str with: "orig)
                  (is (= :no-error modified))))))))
 
-(deftest barf-forward-edge-case1-test
-  "wierd edge-case 2here barf fails"
+(deftest ^:wip barf-forward-edge-case1-test
+  "wierd edge-case here barf fails
+  required a newer version of rewrite-clj than is specified by cljfmt"
   (with-buffer
     #_>>>> "[1 |[3] 4]"
     (is (= "[1 |[3]] 4"
-           (-> (SUT/slurp-backward)
+           (-> (SUT/barf-forward)
                (join-s-cur))))))
 
 (deftest slurp-backward-test

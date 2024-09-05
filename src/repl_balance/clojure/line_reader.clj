@@ -526,12 +526,12 @@
 ;; paredit widgets
 ;; -----------------------------------------
 
-(def paredit-kill-orig
+(def paredit-kill
   (create-widget
     (paredit/kill-in-buff)
     true))
 
-(def paredit-kill
+(def paredit-kill-debug
   (create-widget
     (let [join-s-cur (requiring-resolve 'repl-balance.test-helpers/join-s-cur)
           s (str api/*buffer*)
