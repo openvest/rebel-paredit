@@ -5,8 +5,7 @@
             [repl-balance.jline-api :as j])
   (:import [org.jline.reader.impl DefaultParser]
            [org.jline.reader.impl LineReaderImpl]
-           [org.jline.terminal Terminal]
-           [org.jline.terminal TerminalBuilder]
+           [org.jline.terminal Terminal TerminalBuilder]
            [org.jline.terminal.impl DumbTerminal]))
 
 ; https://www.infoworld.com/article/3697654/interactive-java-consoles-with-jline-and-consoleui.html?page=2
@@ -27,6 +26,25 @@
 (let [p (proxy [org.jline.reader.impl.LineReaderImpl] [terminal, "p-proxy" {}]
                (readLine [] (str "tiny " (.getAppName this))))]
      (.readLine p))
+
+(let [p (proxy [org.jline.reader.impl.LineReaderImpl] [terminal, "p-proxy" {}]
+               (getLastBinding [] "xyz"))]
+     (.getLastBinding p))
+
+(comment
+  (let [[s cur] (split-s-cur "[3 |4 5]")
+        buf (doto (BufferImpl.)
+                  (.write s)
+                  (.cursor cur))
+        a (atom (mapv str [:a :de :zyz]) )
+        p (proxy [org.jline.reader.impl.LineReaderImpl] [j/*terminal*, "p-proxy" {}]
+                 (getLastBinding [] (let [f  (first @a)]
+                                         (swap! a rest)
+                                         f)))]
+       (binding [j/*line-reader* p
+                 j/*buffer* buf]
+                (pe/open-round)
+                (join-s-cur (str j/*buffer*) (.cursor j/*buffer*)))))
 
 ;; TODO: work on testing framework
 ;; this works

@@ -5,7 +5,7 @@
             [rewrite-clj.zip :as z]
             [clojure.string :as str]
             [clojure.test :refer :all]
-            [repl-balance.test-helpers :refer [split-s-cur join-s-cur s-cur-test]])
+            [repl-balance.test-helpers :refer [split-s-cur join-s-cur s-cur-test reader-test]])
   (:import [org.jline.reader.impl LineReaderImpl BufferImpl]))
 
 ;; items marked ^:wip are work in progress where non error returns are produced
@@ -250,6 +250,13 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
+(deftest kill-multiline-test
+  (let [[beg-str beg-cur] (split-s-cur "[|(and (or x\n y)\n z)]")
+        [new-str new-cur] (split-s-cur "[|]")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
 ;; slurp and barf tests
 
 (deftest slurp-forward-test
@@ -380,7 +387,7 @@
            (-> (SUT/barf-backward)
                (join-s-cur))))))
 
-#_(deftest slurp-backward-from-empty-coll-test
+(deftest slurp-backward-from-empty-coll-test
     (with-buffer
       #_>>>> "[1 [|] 2]"
       (is (= "[[1|] 2]"
@@ -707,6 +714,12 @@
            (-> (SUT/backward)
                (join-s-cur))))))
 
+(deftest paredit-close-square-at-comment-end-of-line-test
+  "this should behave as though it is still inside the literal"
+  (reader-test SUT/close-round "]"
+               "; Hello, world!|\n"
+               "; Hello, world!]|\n"))
+
 (comment
   ;; look for error if we end with whitespace like "[x\n]"
   (let [s "[1 [22 :foo  bar]\n :z]"
@@ -734,4 +747,3 @@
              (.cursor cur)
              (.write "|")))))
 )
-

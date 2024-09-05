@@ -6,7 +6,7 @@
   edge case testing"
   (:require [repl-balance.clojure.paredit :as SUT]
             [repl-balance.core]
-            [repl-balance.test-helpers :refer [s-cur-test buf-test]]
+            [repl-balance.test-helpers :refer [s-cur-test buf-test reader-test]]
             [clojure.test :refer :all]))
 
 ;;;;;;;;;; Basic Insertion Commands ;;;;;;;;;;
@@ -18,13 +18,13 @@
               "(foo \"bar |baz\" quux)"
               "(foo \"bar (|baz\" quux)"))
 
-(deftest  ^:whitespace paredit-close-round
-  (s-cur-test SUT/close-round
+(deftest paredit-close-round
+  (reader-test SUT/close-round ")"
               "(a b |c  )"
               "(a b c)|")
-  (s-cur-test SUT/close-round
+  (reader-test SUT/close-round "]"
               "; Hello,| world!"
-              "; Hello,)| world!"))
+              "; Hello,]| world!"))
 
 #_(deftest ^:autopair paredit-close-round-and-newline
   "Not sure about this example. It's more lispy than clojure
@@ -56,8 +56,8 @@
               "(foo \"bar |baz\" quux)"
               "(foo \"bar {|baz\" quux)"))
 
-(deftest ^:whitespace paredit-close-square
-  (s-cur-test SUT/close-round
+(deftest paredit-close-square
+  (buf-test SUT/close-round
               "(define-key keymap [frob|  ] 'frobnicate)"
               "(define-key keymap [frob]| 'frobnicate)"))
 
@@ -105,19 +105,7 @@
   )
 
 ;;;;;;;;;; Deleting & Killing ;;;;;;;;;;
-(let* [vec__33146 (repl-balance.test-helpers/split-s-cur "(foo (|) bar)")
-       orig-s__12520__auto__ (clojure.core/nth vec__33146 0 nil)
-       orig-cur__12521__auto__ (clojure.core/nth vec__33146 1 nil)
-       vec__33149 (repl-balance.test-helpers/split-s-cur "(foo | bar)")
-       target-s__12522__auto__ (clojure.core/nth vec__33149 0 nil)
-       target-cur__12523__auto__ (clojure.core/nth vec__33149 1 nil)
-       vec__33152 (SUT/delete-char orig-s__12520__auto__ orig-cur__12521__auto__)
-       modified-s__12524__auto__ (clojure.core/nth vec__33152 0 nil)
-       modified-cur__12525__auto__ (clojure.core/nth vec__33152 1 nil)]
-  (clojure.test/testing
-    (clojure.core/str "testing " (quote SUT/delete-char) "  with: " "(foo (|) bar)")
-    (clojure.test/is (clojure.core/= target-s__12522__auto__ modified-s__12524__auto__))
-    (clojure.test/is (clojure.core/= target-cur__12523__auto__ modified-cur__12525__auto__))))
+
 
 (deftest paredit-forward-delete
   (s-cur-test SUT/delete-char

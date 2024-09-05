@@ -1,7 +1,8 @@
 (ns repl-balance.test-helpers
   (:require [clojure.test :refer :all]
             [clojure.string :as str])
-  (:import (org.jline.reader.impl BufferImpl)))
+  (:import [org.jline.reader.impl LineReaderImpl BufferImpl]
+           [org.jline.terminal TerminalBuilder]))
 
 (defn split-s-cur
   "Takes a string with a `|` to indicate the cursor position.
@@ -61,3 +62,31 @@
       (testing (str "testing " (name '~buf-fn) " with: "~orig)
         (is (= target-s# modified-s#))
         (is (= target-cur# modified-cur#))))))
+
+(defmacro reader-test
+  "macro to run the body with:
+    jline-api/*buffer* bound to a buffer with the provided string
+    jline-reader/*line-reader* with getLastBinding returning the provided string
+  Ths input and output strings must include a | to indicate the cursor position"
+  [buf-fn binding orig target]
+  `(let [[orig-s# orig-cur#] (split-s-cur ~orig)
+         [target-s# target-cur#] (split-s-cur ~target)
+         buffer# (doto (BufferImpl.)
+                   (.write ^String orig-s#)
+                   (.cursor orig-cur#))
+         inputs# (atom [~binding])
+         terminal# (-> (TerminalBuilder/builder)
+                       (.system true)
+                       (.build))
+         line-reader# (proxy [LineReaderImpl] [terminal# "p-proxy" {}]
+                       (getLastBinding [] (let [last-binding# (first @inputs#)]
+                                            (swap! inputs# rest)
+                                            last-binding#)))]
+     (binding [repl-balance.jline-api/*line-reader* line-reader#
+               repl-balance.jline-api/*buffer* buffer#]
+              (~buf-fn)
+              (let [modified-s# (str buffer#)
+                    modified-cur# (.cursor buffer#)]
+                (testing (str "testing " (name '~buf-fn) " with: " ~orig)
+                  (is (= target-s# modified-s#))
+                  (is (= target-cur# modified-cur#)))))))

@@ -436,7 +436,7 @@
                  (z/find-last-by-pos pos))
          new-s (if (coll-end? loc pos)
                  (-> (or (some-> loc z/down z/rightmost*)
-                         (-> loc (z/insert-child (n/spaces 1)) z/down))
+                         (-> loc (z/insert-child (n/spaces 1)) z/down*))
                      pe/slurp-backward
                      z/root-string)
                  (-> loc pe/slurp-backward z/root-string))]
@@ -648,13 +648,19 @@
 ;; autopairing
 (defn is-literal?
   [s c]
-  (some->> (tokenize/tag-syntax s)
-           (keep (fn [[_ beg end tag]]
-                   (when (and (> c beg)
-                              (< c end))
-                     tag)))
-           first
-           #{:line-comment :string-literal}))
+  (let [tag (some->> (tokenize/tag-syntax s)
+                     (keep (fn [[_ beg end tag]]
+                             (when (and (> c beg)
+                                        (< c end))
+                               tag)))
+                     first
+                     #{:line-comment :string-literal})]
+    ;check for at newline following a line-comment  we'll consider that still in the comment
+    (if (or (= c (count s))
+            (and (> c 0)
+                 (= \newline (.charAt s c))))
+      (is-literal? s (dec c))
+      tag)))
 
 (defn open-round
   ([] (open-round j/*buffer*))
@@ -747,9 +753,17 @@
   ([] (close-round j/*buffer*))
   ([buf] (if (is-literal? (str buf) (.cursor buf))
            (doto buf (.write (.getLastBinding j/*line-reader*)))
-           (let [[_ _ end _] (some-> (tokenize/tag-sexp-traversal (str buf))
-                                     (sexp/find-open-sexp-end (.cursor buf)))]
-             (doto buf (.cursor end))))))
+           (let [s (str buf)
+                 cur (.cursor buf)
+                 [_ _ end _] (some-> (tokenize/tag-sexp-traversal s)
+                                     (sexp/find-open-sexp-end cur))
+                 space-before-delimiter (count (re-find #"\s+$" (subs s 0 (dec end))))]
+             (.cursor buf end)
+             (when (pos? space-before-delimiter)
+               (doto buf
+                 (.cursor (- end space-before-delimiter 1))
+                 (.delete space-before-delimiter)
+                 (.move 1)))))))
 
 (defn backward-delete-char
   ([] (backward-delete-char j/*buffer*))
