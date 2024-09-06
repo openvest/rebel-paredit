@@ -236,8 +236,7 @@
               "[:a \"some| string\"]"
               "[:a \"some|\"]"))
 
-(deftest ^:balance-error kill-short-empty-test
-  "kill inside a string"
+(deftest kill-short-empty-test
   (s-cur-test SUT/kill
               "(|)"
               "(|)"))
@@ -250,7 +249,7 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
-(deftest kill-multiline-test
+(deftest ^:balance kill-multiline-test
   (let [[beg-str beg-cur] (split-s-cur "[|(and (or x\n y)\n z)]")
         [new-str new-cur] (split-s-cur "[|]")
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
@@ -312,7 +311,7 @@
            (-> (SUT/barf-forward)
                (join-s-cur))))))
 
-(deftest ^:balance-error barf-forward-at-last-node-test
+(deftest barf-forward-at-last-node-test
   "rewrite-clj compresses spaces
   Note: emacs and intellij have different behavior
   emacs keeps the cursor in place which it is then outside
@@ -367,7 +366,7 @@
                (testing (str "barf-forward-str with: "orig)
                  (is (= :no-error modified))))))))
 
-(deftest ^:wip barf-forward-edge-case1-test
+(deftest barf-forward-edge-case1-test
   "wierd edge-case here barf fails
   required a newer version of rewrite-clj than is specified by cljfmt"
   (with-buffer
@@ -546,6 +545,13 @@
   (with-buffer
     #_>>>> "[0 [1 :f|oo  3] :bar]"
     (is (= "[0 [1 :foo|  3] :bar]"
+           (-> (SUT/forward)
+               (join-s-cur))))))
+
+(deftest ^:movement skip-doublequote-test
+  (with-buffer
+    #_>>>> "(\"foo|\")"
+    (is (= "(\"foo\"|)"
            (-> (SUT/forward)
                (join-s-cur))))))
 

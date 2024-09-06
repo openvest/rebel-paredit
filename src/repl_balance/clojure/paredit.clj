@@ -254,12 +254,14 @@
      :default
      (let [next-newline (or (str/index-of s \newline cur) buff-len)
            tokens (tokenize/tag-sexp-traversal s)
-           [_ beg-beg end-beg _] (sexp/find-open-sexp-start tokens next-newline)
-           kill-end (if (some-> beg-beg (>= cur))
-                      (-> (sexp/find-open-sexp-end tokens end-beg)
-                          (nth 2))
-                      (min next-newline (or (second (sexp/find-open-sexp-end tokens cur))
-                                            buff-len)))
+           kill-end (or (some->> (sexp/find-open-sexp-starts tokens next-newline)
+                                 reverse
+                                 (keep (fn [[_ beg end _]] (when (<= cur beg) end)))
+                                 first
+                                 (sexp/find-open-sexp-end tokens)
+                                 (#(nth % 2)))
+                        (min next-newline (or (second (sexp/find-open-sexp-end tokens cur))
+                                              buff-len))                        )
            extra-kill (->> (subs s kill-end)
                            (re-find #"^ *")
                            count
@@ -656,8 +658,9 @@
                      first
                      #{:line-comment :string-literal})]
     ;check for at newline following a line-comment  we'll consider that still in the comment
-    (if (or (= c (count s))
-            (and (> c 0)
+    (if (or (and (= c (count s))
+                 (= tag :line-comment))
+            (and (> (count s) c 0)
                  (= \newline (.charAt s c))))
       (is-literal? s (dec c))
       tag)))
@@ -739,7 +742,10 @@
              (.cursor new-cur))))
   ([^String s ^Integer c]
    (if (is-literal? s c)
-     [(str (subs s 0 c) "\\\"" (subs s c)) (+ 2 c)]
+     (if (or (= c (dec (count s)))
+             (not (is-literal? s (inc c))))
+       [s (inc c)]
+       [(str (subs s 0 c) "\\\"" (subs s c)) (+ 2 c)])
      (let [space-before (when (> c 0)
                           (-> (.charAt s (dec c))
                               (sexp/space-before)))
@@ -812,29 +818,39 @@
 
 (defn delete-char
   ([] (delete-char j/*buffer*))
-  ([buf] (let [s (str buf)
-               cur (.cursor buf)
-               literal (is-literal? s cur)]
-           (condp #(%1 %2) (char (.currChar buf))
-             #{\( \[ \{} (if literal
-                           (doto buf (.delete))
-                           (doto buf (.move 1)))
-             {\) \(
-              \] \[
-              \} \{} :>> (fn [opener]
-                           (cond
-                             literal
-                             (doto buf (.delete))
-                             (= opener (char (.prevChar buf)))
-                             (doto buf (.move -1) (.delete 2))
-                             :default buf))
-             #{\"} (cond
-                     (or (zero? cur) (not literal)) (doto buf (.move 1))
-                     (and (= \" (char (.prevChar buf)))
-                          (not (is-literal? s (dec cur))))
-                     (doto buf (.move -1) (.delete 2))
-                     :default buf)
-             (doto buf (.delete)))))
+  ([buf] (let [curr-char (char (.atChar buf (.cursor buf)))
+               prev-char (char (.atChar buf (dec (.cursor buf))))
+               literal (is-literal? (str buf) (.cursor buf))]
+           (case literal
+             :line-comment
+             (doto buf (.delete))
+             :string-literal
+             (cond
+               ; slash doublequote
+               (re-find #"^\\\"" (.substring buf (.cursor buf)))
+               (doto buf (.delete 2))
+               ; empty string
+               (and (= \" prev-char curr-char)
+                    (not= \\ (char (.atChar buf (- (.cursor buf) 2)))))
+               (doto buf (.backspace) (.delete))
+               ; end of string
+               (= \" curr-char)
+               buf
+               :default
+               (doto buf (.delete)))
+             ;; so now we know it's not in a literal
+             (if-let [[_ pair extra-space] (re-find #"^((?:\(\)|\[\]|\{\}) ?( *))"
+                                                    (.substring buf (dec (.cursor buf))))]
+               (doto buf
+                 (.move -1)
+                 (.delete (+ 2 (count extra-space))))
+               (cond
+                 (#{\( \[ \{ \"} curr-char)
+                 (doto buf (.move 1))
+                 (#{\) \] \}} curr-char)
+                 buf
+                 :default
+                 (doto buf (.delete)))))))
   ([^String s ^Integer c]
    (let [buf (doto (BufferImpl.)
                (.write s)
