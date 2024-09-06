@@ -769,29 +769,26 @@
   ([] (backward-delete-char j/*buffer*))
   ([buf] (let [s (str buf)
                cur (.cursor buf)
-               literal (is-literal? s cur)]
-           (condp #(%1 %2) (char (.prevChar buf))
-             #{\) \] \}} (if literal
-                           (doto buf (.backspace))
-                           (doto buf (.move -1)))
-             {\( \)
-              \[ \]
-              \{ \}} :>> (fn [closer]
-                           (cond
-                             literal
-                             (doto buf (.backspace))
-                             (= closer (char (.currChar buf)))
-                             (doto buf (.backspace) (.delete))
-                             :default buf))
-             #{\"} (cond
-                     (and (pos? cur)
-                          (not literal)
-                          (is-literal? s (dec cur)))
-                     (doto buf (.move -1))
-                     (and (= \" (char (.currChar buf)))
-                          (not (is-literal? s (inc cur))))
-                     (doto buf (.move -1) (.delete 2))
-                     :default buf)
+               literal (is-literal? s cur)
+               prev-char (char (.prevChar buf))]
+           (cond
+             literal
+             (if-let [[_ slash-doublequote] (re-find #"(\\)?\"$" (subs s 0 cur))]
+               (if slash-doublequote
+                 (doto buf (.backspace) (.backspace))
+                 buf)
+               (doto buf (.backspace)))
+             ;; after a closing delim
+             (#{\) \] \} \"} prev-char)
+             (doto buf (.move -1))
+             ;; after an opening delim
+             (#{\( \[ \{} prev-char)
+             (if-let [[_ pair] (re-find #" ?( *(?:\(\)|\[\]|\{\}))$" (subs s 0 (inc cur)))]
+               (doto buf
+                 (.move (- 0 (dec (count pair))))
+                 (.delete (count pair)))
+               (doto buf (.move -1)))
+             :default
              (doto buf (.backspace)))))
   ([^String s ^Integer c]
    (let [buf (doto (BufferImpl.)

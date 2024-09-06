@@ -140,7 +140,7 @@
 
 (deftest ^:whitespace kill-space-string-test
   "some kills with a space before the string"
-  ; seems to fail with one space before the double-quote char
+  ; seems to fail with one space before the doublequote char
   (let [[beg-str beg-cur] (split-s-cur "(foo | \"bar\")")
         [new-str new-cur] (split-s-cur "(foo |)")
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
@@ -172,7 +172,7 @@
 
 (deftest kill-space-string2-test
   "some kills with a space "
-  ; seems to fail with one space before the double-quote char
+  ; seems to fail with one space before the doublequote char
   (let [[beg-str beg-cur] (split-s-cur "(|foo bar)")
         [new-str new-cur] (split-s-cur "(|)")
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
@@ -253,6 +253,14 @@
 (deftest kill-multiline-test
   (let [[beg-str beg-cur] (split-s-cur "[|(and (or x\n y)\n z)]")
         [new-str new-cur] (split-s-cur "[|]")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
+(deftest kill-literal-end-double-doublequote-test
+  "An escaped doublequote at the end of a literal"
+  (let [[beg-str beg-cur] (split-s-cur "\"foo\\\"|\"")
+        [new-str new-cur] (split-s-cur "\"foo|\"")
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
