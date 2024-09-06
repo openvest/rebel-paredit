@@ -769,27 +769,40 @@
   ([] (backward-delete-char j/*buffer*))
   ([buf] (let [s (str buf)
                cur (.cursor buf)
-               literal (is-literal? s cur)
-               prev-char (char (.prevChar buf))]
-           (cond
-             literal
-             (if-let [[_ slash-doublequote] (re-find #"(\\)?\"$" (subs s 0 cur))]
-               (if slash-doublequote
-                 (doto buf (.backspace) (.backspace))
-                 buf)
+               curr-char (when (< cur (count s)) (.charAt s cur))
+               prev-char (when (pos? cur) (.charAt s (dec cur)))
+               literal (is-literal? s cur)]
+           (case literal
+             :line-comment
+             (doto buf (.backspace))
+             :string-literal
+             (cond
+               ; slash doublequote
+               (re-find #"\\\"$" (subs s 0 cur))
+               (doto buf (.backspace) (.backspace))
+               ; empty string
+               (= \" curr-char prev-char)
+               (doto buf (.delete) (.backspace))
+               ; beginning of string
+               (= \" prev-char)
+               buf
+               :default
                (doto buf (.backspace)))
-             ;; after a closing delim
-             (#{\) \] \} \"} prev-char)
-             (doto buf (.move -1))
-             ;; after an opening delim
-             (#{\( \[ \{} prev-char)
-             (if-let [[_ pair] (re-find #" ?( *(?:\(\)|\[\]|\{\}))$" (subs s 0 (inc cur)))]
+             ;; so now we know its not a literal
+             (if-let [[_ pair] (and curr-char
+                                    (re-find #" ?( *(?:\(\)|\[\]|\{\}))$"
+                                             (subs s 0 (inc cur))))]
                (doto buf
                  (.move (- 0 (dec (count pair))))
                  (.delete (count pair)))
-               (doto buf (.move -1)))
-             :default
-             (doto buf (.backspace)))))
+               (cond
+                 ;; TODO: maybe this should move back one.  IntelliJ and emacs aren't consistent here
+                 (#{\( \[ \{} prev-char)          ;; at an opener so don't move
+                 buf                                        ;;
+                 (#{\) \] \} \"} prev-char)       ;; at a closer so move back
+                 (doto buf (.move -1))
+                 :default
+                 (doto buf (.backspace)))))))
   ([^String s ^Integer c]
    (let [buf (doto (BufferImpl.)
                (.write s)
