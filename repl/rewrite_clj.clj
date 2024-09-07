@@ -4,6 +4,7 @@
             [rewrite-clj.zip :as z]
             [rewrite-clj.paredit :as rpe]
             [rewrite-clj.custom-zipper.utils :as rczu]
+            [cljfmt.core :as fmt]
             [clojure.string :as str]
             [clojure.pprint :refer [pprint]]))
 

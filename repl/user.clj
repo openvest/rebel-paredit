@@ -5,6 +5,8 @@
              [rewrite-clj.node :as n]
              [repl-balance.jline-api :as j]
              [repl-balance.clojure.paredit :as pe]
+             [repl-balance.clojure.tokenizer :as tokenizer]
+             [repl-balance.clojure.sexp :as sexp]
              [rewrite-clj.paredit :as paredit]
              [rewrite-clj.custom-zipper.utils :as rczu]
              [clojure.pprint :refer [pprint]]

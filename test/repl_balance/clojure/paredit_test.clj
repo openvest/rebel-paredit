@@ -290,6 +290,15 @@
            (-> (SUT/slurp-forward)
                (join-s-cur))))))
 
+(deftest ^:balance slurp-forward-reindent-test
+  "slurping included a reindent which throws off the tail
+  so if we reindent we can't just cut a section out form the cursor any longer"
+  (with-buffer
+    #_>>>> "(let [a 1\n      b|]\n  :ovx)"
+    (is (= "(let [a 1\n      b|\n  :ovx])"
+           (-> (SUT/slurp-forward)
+               (join-s-cur))))))
+
 
 #_(deftest slurp-forward-quoted-test
   "slurp forward when there is a quote i.e. invalid sexp"

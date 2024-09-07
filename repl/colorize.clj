@@ -46,6 +46,19 @@ repl-balance.tools/colorize
       repl-balance.tools/color
       [["_" 12 15 :widget/error]]
       "Autopair is OFF")
-    (j/->ansi )
+    j/->ansi
     print )
 
+(let [s "(def x [:foo \"hi there\"])"
+          cur 8
+          ts (tokenizer/tag-sexp-traversal s)
+          tf (tokenizer/tag-font-lock s)
+          br (map #(-> % pop (conj :widget/error))
+                 [(sexp/find-open-sexp-start ts cur)
+                  (sexp/find-open-sexp-end ts cur)] )
+          tokens (sort #(- (second %1) (second %2)) (concat  tf br))]
+  (print (j/->ansi (t/highlight-tokens t/color tokens s))))
+
+(-> "(def x :abc)"
+    line-reader/highlight-clj-str
+    j/->ansi)

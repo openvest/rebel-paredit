@@ -8,6 +8,9 @@
    [repl-balance.clojure.paredit :as paredit]
    [repl-balance.tools :as tools :refer [color service-dispatch]]
    [repl-balance.utils :as utils :refer [log]]
+   [rewrite-clj.parser :as p]
+   [rewrite-clj.node :as n]
+   [cljfmt.core :as fmt]
    ;; lazy-load
    #_[cljfmt.core :refer [reformat-string]]
    [clojure.string :as string]
@@ -30,7 +33,6 @@
     EndOfFileException
     EOFError
     Widget]
-   [org.jline.widget AutopairWidgets]
    [org.jline.reader.impl LineReaderImpl DefaultParser BufferImpl]
    [org.jline.terminal TerminalBuilder]
    [org.jline.terminal.impl DumbTerminal]
@@ -45,7 +47,7 @@
   {:completion true
    :indent true
    :eldoc true
-   :autopair true
+   :paredit true
    :highlight true
    :redirect-output true
    :key-map :emacs
@@ -601,27 +603,27 @@
     (paredit/backward)
     true))
 
-;why doesn't this work in add-all-widgets?
-(defn autopair-widget
-  "create AutopairWidgets on the currently bound *line-reader*"
-  [line-reader]
-  (let [autopair (AutopairWidgets. line-reader true)
-        ;; this wants to autopair ' and ` which is not cool for clojure
-        ;; lets remove them from the widget/paris  (hard because pairs map is not public)
-        pairs (api/get-private-field autopair "pairs")
-        ]
-    (swap! line-reader assoc :autopair-widgets autopair)
-    ;; default behavior it to now autopair a lot of stuff but in lispy languages this is a problem
-    (.put (get-private-field autopair "LBOUNDS") "all", "")
-    (.put (get-private-field autopair "RBOUNDS") "all", "")
-    ;; We added curly braces with the arg above. Clojure should not autoparir ' or`
-    (doto pairs
-      (.remove "'")
-      (.remove "`")
-      (.remove " "))
-    ;; we now disable by default as we move to newer paredit autopairing
-    (doto autopair
-      (.disable))))
+(def reformat-widget
+  "widget to reformat the buffer with cljfmt"
+  (create-widget
+    (let [s (str *buffer*)
+          {:keys [row col]} (paredit/str-find-pos
+                              (str *buffer*)
+                              (.cursor *buffer*))
+          new-s (-> s
+                    p/parse-string-all
+                    ;; should we reformat or just re-indent?
+                    (fmt/reformat-form {:remove-consecutive-blank-lines? false})
+                    n/string)
+          new-row-offsets (paredit/str-row-offsets new-s)
+          new-pos {:row row
+                   :col (min col
+                             (dec (new-row-offsets row)))}]
+      (doto *buffer*
+        (.clear)
+        (.write new-s)
+        (.cursor (paredit/str-find-cursor new-s new-pos))))
+    true))
 
 (def indent-or-complete-widget
   (create-widget
@@ -918,6 +920,7 @@
   (binding [*line-reader* line-reader]
     (register-widget "clojure-indent-line"        indent-line-widget)
     (register-widget "clojure-indent-or-complete" indent-or-complete-widget)
+    (register-widget "clojure-reformat"           reformat-widget)
 
     (register-widget "clojure-doc-at-point"       document-at-point-widget)
     (register-widget "clojure-source-at-point"    source-at-point-widget)
@@ -961,6 +964,7 @@
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \S)) "clojure-source-at-point")
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \A)) "clojure-apropos-at-point")
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \E)) "clojure-eval-at-point")
+    (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \F)) "clojure-reformat")
     (key-binding (str (KeyMap/ctrl \X) (KeyMap/ctrl \M)) "clojure-force-accept-line")))
 
 (defn bind-paredit-widgets [km-name]

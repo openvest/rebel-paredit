@@ -119,7 +119,6 @@
   (let [get-position (loc->position* loc)]
     (loop [l loc]
       (let [{:keys [cursor end-cursor] :as position} (get-position l)]
-        (println ">>>" position (z/node l) " type: " (type l))
         (cond
           ;; we found it
           (= target-cursor cursor)
@@ -139,11 +138,9 @@
             (assoc l :inner-cursor (- target-cursor cursor)))
           ;; descend into this node or return the fragment
           (< target-cursor end-cursor)
-          (do
-            (println "---> inside down movement" target-cursor cursor)
-            (if-let [inside (z/down* l)]
-              (recur inside)
-              (assoc l :inner-cursor (- target-cursor cursor)))))))))
+          (if-let [inside (z/down* l)]
+            (recur inside)
+            (assoc l :inner-cursor (- target-cursor cursor))))))))
 
 (defmulti truncate-node
           "if we are inside a string, symbol or whitespace,
@@ -170,8 +167,7 @@
   (cond
     (z/sexpr-able? loc) (z/edit loc #(truncate-node % len))
     (= :whitespace (z/tag loc)) (z/replace loc (n/spaces len))
-    :default (do (println "can't truncate " (z/node loc))
-                 loc)))
+    :default loc))
 
 ;; buffer based functions
 ;; killing
@@ -319,9 +315,11 @@
                   (z/of-string {:track-position? true})
                   (z/find-last-by-pos pos)
                   (pe/slurp-forward)
-                  z/up
-                  ((fn [loc]
-                     (z/replace loc (-> loc z/node fmt/unindent (fmt/indent)))))
+                  ;; FIXME: cannot reindent and then expect to tail
+                  ;;         to be at the same cursor position
+                  #_z/up
+                  #_((fn [loc]
+                     (z/replace loc (-> loc z/node fmt/unindent fmt/indent))))
                   (z/root-string)
                   (subs cur))]
      (doto buf

@@ -74,8 +74,6 @@
        (clj-service/create
         (when api/*line-reader* @api/*line-reader*)))
       ;; can't this be part of all add-all-widgets ?
-      (when (some-> api/*line-reader* deref :autopair)
-        (clj-line-reader/autopair-widget api/*line-reader*))
       ;; still debating about wether to include the following line in
       ;; `with-line-reader`. I am thinking that taking over out should
       ;; be opt in when using the lib taking over out provides
