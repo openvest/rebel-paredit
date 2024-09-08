@@ -243,6 +243,7 @@
         ;; This requires multiple passes through s
         ;; maybe a new tokenizer to do it all in one pass
         brackets (when-let [open-tag (find-open-sexp-start ts cur)]
-                   (map #(-> % pop (conj :widget/error))
-                       [open-tag (find-open-sexp-end ts cur)]))]
+                   (when-let [close-tag (find-open-sexp-end ts cur)]
+                     (map #(-> % pop (conj :widget/error))
+                          [open-tag close-tag])))]
     (tokenize/merge-tags tf brackets)))
