@@ -755,8 +755,14 @@
 
 (defn close-round
   ([] (close-round j/*buffer*))
-  ([buf] (if (is-literal? (str buf) (.cursor buf))
+  ([buf] (cond
+           ;; in a literal
+           (is-literal? (str buf) (.cursor buf))
            (doto buf (.write (.getLastBinding j/*line-reader*)))
+           ;; at buff end. TODO: should also check for top level forms
+           (= (.cursor buf) (.length buf))
+           buf  ;; send a message?
+           :default
            (let [s (str buf)
                  cur (.cursor buf)
                  [_ _ end _] (some-> (tokenize/tag-sexp-traversal s)
