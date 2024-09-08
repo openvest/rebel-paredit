@@ -372,4 +372,8 @@ fmt/reformat-form
          (str (subs s 0 cur)))
     (str (subs s 0 cur) (subs s next-newline))))
 
-
+;;;
+(-> (line-reader/clojure-highlighter)
+    (.highlight (line-reader/create service) "(def foo [:bar :food])")
+    (j/->ansi)
+    (print))

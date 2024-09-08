@@ -228,3 +228,21 @@
    before a closing delimiter"
   [c]
   (when-not (no-space-after c) " "))
+
+
+;;; TODO: this tag-font-lock+ should move back to tokenizer
+;;;       after the sexp circular dependency is addressed
+
+(defn tag-font-lock+
+  "the same as tag-font-lock but adds in
+  red color for the current parens surrounding the cursor"
+  [s cur]
+  ;; is this getting called way to many times???????????
+  (let [tf (tokenize/tag-font-lock s)
+        ts (tokenize/tag-sexp-traversal s)
+        ;; This requires multiple passes through s
+        ;; maybe a new tokenizer to do it all in one pass
+        brackets (when-let [open-tag (find-open-sexp-start ts cur)]
+                   (map #(-> % pop (conj :widget/error))
+                       [open-tag (find-open-sexp-end ts cur)]))]
+    (tokenize/merge-tags tf brackets)))

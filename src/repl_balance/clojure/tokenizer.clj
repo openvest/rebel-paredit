@@ -272,6 +272,8 @@
                :font-lock/variable-name ;; :dynamic-var
                ))
 
+
+
 (def non-interp-regexp
   (Pattern/compile
    (str
@@ -321,6 +323,18 @@
                :close-brace
                :open-bracket
                :close-bracket))
+
+(defn merge-tags
+  "merge two vectors of [str beg end tag] by beg-index"
+  [a b]
+  (if (and (seq a) (seq b))
+    (lazy-seq
+      (if (< (try (second (first a))
+                  (catch Exception e (throw (ex-info "oops" {}))))
+             (second (first b)))
+        (cons (first a) (merge-tags (next a) b))
+        (cons (first b) (merge-tags a (next b)))))
+    (or a b)))
 
 (def non-interp-word-rexp
   (Pattern/compile

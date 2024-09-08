@@ -1,6 +1,8 @@
 (ns colorize
   (:require repl-balance.main
-            [repl-balance.jline-api :as j]))
+            [repl-balance.tools :as t]
+            [repl-balance.jline-api :as j]
+            [repl-balance.clojure.tokenizer :as tokenizer]))
 
 ;; colorizing specific
 ;; puget
@@ -8,14 +10,14 @@
 ;; note that repl-balance has its own tokenizer and colorizer
 
 ;; color fn e.g. (repl-balance.tools/color  :font-lock/variable-name)
-repl-balance.tools/colorize
+
 ;; tokenized string:
 (repl-balance.clojure.tokenizer/tag-font-lock "(def x 8)")
 ;; => (["def" 1 4 :font-lock/core-form] ["x" 5 6 :font-lock/variable-name])
 
 ;; returns AttributedStringBuilder
-(repl-balance.tools/highlight-tokens
-  repl-balance.tools/color
+(t/highlight-tokens
+  t/color
   [["def" 1 4 :font-lock/core-form]
    ["x" 5 6 :font-lock/variable-name]]
   "(def x 8)")
@@ -62,3 +64,26 @@ repl-balance.tools/colorize
 (-> "(def x :abc)"
     line-reader/highlight-clj-str
     j/->ansi)
+
+
+;; using the new highlighter
+(binding [j/*line-reader* (line-reader/create service)
+          j/*buffer* (apply j/buffer* (split-s-cur "(def| foo [:bar :food])")) ]
+  (-> (line-reader/clojure-highlighter+)
+    (.highlight j/*line-reader* (str j/*buffer*))
+    (j/->ansi)
+    (print)))
+
+
+;; see all colors
+(doseq [k (keys (:dark-screen-theme t/color-themes))]
+  (-> (t/highlight-tokens t/color
+         [["_" 0 (count (str k)) k]] (str k \newline))
+      (j/->ansi)
+      (print)))
+
+;;
+(-> (line-reader/clojure-highlighter)
+    (.highlight (line-reader/create service) "(def foo [:bar :food])")
+    (j/->ansi)
+    (print))

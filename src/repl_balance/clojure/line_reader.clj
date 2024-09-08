@@ -1236,6 +1236,21 @@
           (.toAttributedString (highlight-clj-str buffer))
           (AttributedString. buffer))))))
 
+(defn clojure-highlighter+ []
+  (proxy [Highlighter] []
+    (highlight [^LineReader reader ^String buffer]
+      ;; this gets called on a different thread
+      ;; by the window resize interrupt handler
+      ;; so add this binding here
+      (binding [*line-reader* reader
+                *buffer* (.getBuffer reader)]
+        (if (:highlight @reader)
+          (let [cur (.cursor *buffer*)]
+           (.toAttributedString (tools/highlight-tokens color
+                                                        (sexp/tag-font-lock+ buffer cur)
+                                                        buffer)))
+          (AttributedString. buffer))))))
+
 ;; ----------------------------------------
 ;; Building the line reader
 ;; ----------------------------------------
@@ -1245,7 +1260,7 @@
          (map? service)]}
   (doto (create-line-reader terminal "Clojure Readline" service)
     (.setCompleter (or completer (clojure-completer)))
-    (.setHighlighter (or highlighter (clojure-highlighter )))
+    (.setHighlighter (or highlighter (clojure-highlighter+)))
     (.setParser (or parser (make-parser)))
     ;; make sure that we don't have to double escape things
     (.setOpt LineReader$Option/DISABLE_EVENT_EXPANSION)
