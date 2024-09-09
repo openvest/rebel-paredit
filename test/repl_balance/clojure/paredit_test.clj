@@ -752,6 +752,12 @@
                "; Hello, world!|\n"
                "; Hello, world!]|\n"))
 
+(deftest ^:balance paredit-comment-b4-opening-test
+  "The key here is to not break paren balance"
+  (s-cur-test SUT/line-comment
+              "|(def x\n  3)"
+              ";; |\n(def x\n  3)"))
+
 (comment
   ;; look for error if we end with whitespace like "[x\n]"
   (let [s "[1 [22 :foo  bar]\n :z]"

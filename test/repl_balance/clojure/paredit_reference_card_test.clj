@@ -84,19 +84,23 @@
   "(str \\)"
   )
 
-#_(deftest paredit-comment-dwim
-  "This is a bit of whose right/choose your own adventure
-  paredit-ref-card, emacs and cursive all have different behaviors"
-  "(foo |bar) ; baz"
-  "(foo bar) ; |baz"
-
-  "(frob grovel)|"
-  "(frob grovel) ;|"
-
-  "|(defn hello-world ...)"
-  ";;; |\n  (defn hello-world ...)"
-  )
-
+(deftest paredit-comment-dwim
+  "This is a bit of whose right/choose your own adventure.
+  paredit-reference-card, emacs and cursive all have different behaviors
+  The key here is to not break paren balance"
+  (s-cur-test SUT/line-comment
+              "(foo |bar) ;; baz"
+              "(foo ;; |bar\n     ) ;; baz"
+              #_emacs #_"(foo bar) ; |baz")
+  (s-cur-test SUT/line-comment
+              "(frob grovel)|"
+              "(frob grovel) ;; |")
+  (s-cur-test SUT/line-comment
+              ;; differs from ref card but agrees with emacs and intellij
+              ;; check on the white space on this later
+              "|(defn hello-world ...)"
+              ";; |(defn hello-world ...)"))
+;(defn hello-world ...)
 #_(deftest paredit-newline
   "not much diff from default behavior except perhaps indenting
   Note: example modified for clojure"

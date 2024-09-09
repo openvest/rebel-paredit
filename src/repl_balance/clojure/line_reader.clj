@@ -603,6 +603,11 @@
     (paredit/backward)
     true))
 
+(def paredit-line-comment
+  (create-widget
+    (paredit/line-comment)
+    true))
+
 (def reformat-widget
   "widget to reformat the buffer with cljfmt"
   (create-widget
@@ -950,7 +955,8 @@
     (register-widget "paredit-raise"              paredit-raise)
     (register-widget "paredit-split"              paredit-split)
     (register-widget "paredit-forward"            paredit-forward)
-    (register-widget "paredit-backward"           paredit-backward)))
+    (register-widget "paredit-backward"           paredit-backward)
+    (register-widget "paredit-line-comment"       paredit-line-comment)))
 
 (defn bind-indents [km-name]
   (doto km-name
@@ -976,6 +982,7 @@
     (key-binding ")" "paredit-close-round")
     (key-binding "]" "paredit-close-round")
     (key-binding "}" "paredit-close-round")
+    (key-binding ";" "paredit-line-comment")
     (key-binding (str (KeyMap/ctrl \D)) "delete-char")      ;; replaces delete-char-or-list binding
 
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")

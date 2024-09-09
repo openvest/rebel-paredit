@@ -775,6 +775,8 @@
                  (.delete space-before-delimiter)
                  (.move 1)))))))
 
+;; deleting char or word
+
 (defn backward-delete-char
   ([] (backward-delete-char j/*buffer*))
   ([buf] (let [s (str buf)
@@ -860,4 +862,43 @@
                (.write s)
                (.cursor c))]
      (delete-char buf)
+     [(str buf) (.cursor buf)])))
+
+;; comments
+
+(defn line-comment
+  ([]
+   (line-comment j/*buffer*))
+  ([buf]
+   (if (is-literal? (str buf) (.cursor buf))
+     (.write buf ";")
+     (let [cur (.cursor buf)
+           cur-col (count (re-find #".*$" (.upToCursor buf)))
+           comment-str (or (and (pos? cur-col)
+                                (re-find #".*\S$" (.upToCursor buf))
+                                " ;; ")
+                           ";; ")
+           eol (or (str/index-of (str buf) \newline cur)
+                   (.length buf))
+           tags (tokenize/tag-sexp-traversal (str buf))
+           delimiter (or (some-> tags
+                                 (sexp/find-open-sexp-end cur)
+                                 (second))
+                         (some-> tags
+                                 (sexp/find-open-sexp-start eol)
+                                 (second)))]
+       (if delimiter
+         ;; add a \newline to preserve the balance
+         (doto buf
+           (.cursor delimiter)
+           (.write (apply str "\n" (repeat cur-col \space)))
+           (.cursor cur)
+           (.write comment-str))
+         ;; no delimiter to preserve so just comment here
+         (.write buf comment-str)))))
+  ([^String s ^Integer c]
+   (let [buf (doto (BufferImpl.)
+               (.write s)
+               (.cursor c))]
+     (line-comment buf)
      [(str buf) (.cursor buf)])))

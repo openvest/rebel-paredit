@@ -21,7 +21,9 @@
            :repl         {:extra-paths ["repl"]}
            :test         {:extra-paths ["test"]
                           :extra-deps  {lambdaisland/kaocha {:mvn/version "1.91.1392"}
-                                        ring/ring-spec      {:mvn/version "0.0.4"}}
+                                        ring/ring-spec      {:mvn/version "0.0.4"}
+                                        ; silence slf4j log warnings during testing
+                                        org.slf4j/slf4j-nop {:mvn/version "1.7.36"}}
                           :main-opts   ["-m" "kaocha.runner"]}
            ;; tools.build `build.clj` built script
            :build
