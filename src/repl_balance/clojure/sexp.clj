@@ -238,12 +238,18 @@
   red color for the current parens surrounding the cursor"
   [s cur]
   ;; is this getting called way to many times???????????
-  (let [tf (tokenize/tag-font-lock s)
-        ts (tokenize/tag-sexp-traversal s)
+  (let [ts (tokenize/tag-sexp-traversal s)
         ;; This requires multiple passes through s
         ;; maybe a new tokenizer to do it all in one pass
-        brackets (when-let [open-tag (find-open-sexp-start ts cur)]
-                   (when-let [close-tag (find-open-sexp-end ts cur)]
-                     (map #(-> % pop (conj :widget/error))
-                          [open-tag close-tag])))]
-    (tokenize/merge-tags tf brackets)))
+        outer-brackets (when-let [open-tag (find-open-sexp-start ts cur)]
+                         (when-let [close-tag (find-open-sexp-end ts cur)]
+                           (map #(-> % pop (conj :widget/error))
+                                [open-tag close-tag])))
+        inner-brackets (when (re-find #"[\]\)\}]$" (subs s 0 cur))
+                         (-> (find-open-sexp-start ts (dec cur))
+                             pop
+                             (conj :font-lock/variable-name)
+                             (cons  [["_" (dec cur) cur :font-lock/variable-name]])))]
+    (-> (tokenize/tag-font-lock s)
+        (tokenize/merge-tags outer-brackets)
+        (tokenize/merge-tags inner-brackets))))
