@@ -38,7 +38,7 @@ If you want to try this really quickly
 and then invoke this:
 
 ```shell
-clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.2.60\"}}}" -m repl-balance.main
+clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.2.81\"}}}" -m repl-balance.main
 ```
 
 That should start a Clojure REPL that takes its input from the ReplBalance readline editor.
@@ -51,7 +51,7 @@ Alternatively you can specify an alias in your `$HOME/.clojure/deps.edn`
 ```clojure
 {
  ...
- :aliases {:repl/balance {:extra-deps {com.openvest/repl-balance {:mvn/version "0.2.60"}}
+ :aliases {:repl/balance {:extra-deps {com.openvest/repl-balance {:mvn/version "0.2.81"}}
                           :main-opts  ["-m" "repl-balance.main"]}}
 }
 ```
@@ -64,7 +64,7 @@ $ clojure -M:repl/balance
 
 #### Leiningen
 
-Add `[com.openvest/repl-balance "0.2.60"]` to the dependencies in your
+Add `[com.openvest/repl-balance "0.2.81"]` to the dependencies in your
 `project.clj` then start a REPL like this:
 
 ```shell
@@ -130,6 +130,11 @@ following options:
 ```
 :key-map         - either :viins or :emacs. Defaults to :emacs
 
+:key-bindings    - map of key-bindings that get applied after all other key 
+                   bindings have been applied
+
+:widgets         - list of widgets (actions) that can be bound to keys
+
 :color-theme     - either :light-screen-theme or :dark-screen-theme
 
 :highlight       - boolean, whether to syntax highlight or not. Defaults to true
@@ -144,8 +149,6 @@ following options:
 :redirect-output - boolean, rebinds root *out* during read to protect linereader
                    Defaults to true
                    
-:key-bindings    - map of key-bindings that get applied after all other key 
-                   bindings have been applied
 ```
 
 #### Key binding config
@@ -274,6 +277,7 @@ editing, syntax highlighting, auto indenting will all work just fine.
 
 * TAB => word completion or code indent if the cursor is in the whitespace at the
   start of a line
+* Ctrl-X_Ctrl-F => Reformat
 * Ctrl-X_Ctrl-D => Show documentation for word at point
 * Ctrl-X_Ctrl-S => Show source for word at point
 * Ctrl-X_Ctrl-A => Show apropos for word at point
@@ -327,8 +331,6 @@ to increasing the scope of repl-balance.
 I will have a preference for creating hooks so that additional functionality
 can be layered on with libraries.
 
-If you are wanting to contribute but don't know what to work on reach
-out to me on the clojurians slack channel.
 
 ## License
 
