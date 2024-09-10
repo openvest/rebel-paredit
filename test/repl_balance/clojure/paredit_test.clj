@@ -299,8 +299,9 @@
            (-> (SUT/slurp-forward)
                (join-s-cur))))))
 
+;; slurp and barf within a quoted syntax string
 
-#_(deftest slurp-forward-quoted-test
+(deftest slurp-forward-quoted-syntax-test
   "slurp forward when there is a quote i.e. invalid sexp"
   (with-buffer
     #_>>>> "(require '[|]this)"
@@ -312,6 +313,32 @@
     (is (= "@(|def x 3)"
            (-> (SUT/slurp-forward)
                (join-s-cur))))))
+
+(deftest barf-forward-quoted-syntax-test
+  "barf forward when there is a quote i.e. invalid sexp"
+  (with-buffer
+    #_>>>> "[:a `[|:z]]"
+    (is (= "[:a `[|] :z]"
+           (-> (SUT/barf-forward)
+               (join-s-cur))))))
+
+(deftest slurp-backward-quoted-syntax-test
+  "slurp backward when there is a quote i.e. invalid sexp"
+  (with-buffer
+    #_>>>> "[apply `(vec |:z)]"
+    (is (= "[`(apply vec |:z)]" ;; emacs "[(apply `vec |:z)]"
+           (-> (SUT/slurp-backward)
+               (join-s-cur))))))
+
+
+(deftest barf-backward-quoted-syntax-test
+  "barf forward when there is a quote i.e. invalid sexp"
+  (with-buffer
+    #_>>>> "[:a `[:b| :c]]"
+    (is (= "[:a :b `[:c]"  ;; emacs "[:a `:b [:c]]"
+           (-> (SUT/barf-backward)
+               (join-s-cur))))))
+
 
 (deftest barf-forward-test
   (with-buffer

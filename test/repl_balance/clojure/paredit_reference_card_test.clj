@@ -216,7 +216,6 @@
   )
 
 (deftest paredit-raise-sexp
-  ;; FIXME: this works but the key binding fails.
   (buf-test SUT/raise
             ;; removed a \n here for test output clarity
             "(dynamic-wind in (fn[] |body) out)"
