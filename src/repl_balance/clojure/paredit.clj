@@ -578,7 +578,8 @@
          pos (str-find-pos s cur)
          loc (-> s
                  (z/of-string {:track-position? true})
-                 (z/find-last-by-pos pos))
+                 (z/find-last-by-pos pos)
+                 (z/skip-whitespace))
          new-s (-> loc
                    (pe/raise)
                    (z/root-string))

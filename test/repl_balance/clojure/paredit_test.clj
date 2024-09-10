@@ -568,6 +568,16 @@
            (-> (SUT/split)
                (join-s-cur))))))
 
+
+(deftest raise-with-whitespace-test
+  "can fail if there is a whitespace before element we are raising"
+  (testing "test raise with: \"[| [:x]]\""
+   (with-buffer
+     #_>>>> "[| [:x]]"
+     (is (= "|[:x]"
+            (-> (SUT/raise)
+                (join-s-cur)))))))
+
 ;; movement tests
 
 (deftest ^:movement forward-1-test
