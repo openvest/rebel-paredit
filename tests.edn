@@ -1,2 +1,2 @@
 #kaocha/v1
-{}
+{:bindings {kaocha.stacktrace/*stacktrace-stop-list* ["kaocha"]}}

@@ -882,12 +882,17 @@
            eol (or (str/index-of (str buf) \newline cur)
                    (.length buf))
            tags (tokenize/tag-sexp-traversal (str buf))
-           delimiter (or (some-> tags
-                                 (sexp/find-open-sexp-end cur)
-                                 (second))
-                         (some-> tags
-                                 (sexp/find-open-sexp-start eol)
-                                 (second)))]
+           delimiter (or
+                       ;; required closer between cursor and eol "(foo| bar)\n
+                       (some-> tags
+                               (sexp/find-open-sexp-end cur)
+                               (second)
+                               (#(when (<= % eol) %)))
+                       ;; unclosed opener between cursor and eol "foo |(bar\n"
+                       (some-> tags
+                               (sexp/find-open-sexp-start eol)
+                               (second)
+                               (#(when (<= cur %) %))))]
        (if delimiter
          ;; add a \newline to preserve the balance
          (doto buf

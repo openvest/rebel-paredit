@@ -99,7 +99,11 @@
               ;; differs from ref card but agrees with emacs and intellij
               ;; check on the white space on this later
               "|(defn hello-world ...)"
-              ";; |(defn hello-world ...)"))
+              ";; |(defn hello-world ...)")
+  (s-cur-test SUT/line-comment
+              ;; should not add extra \newline if it's not needed
+              "(-> x|\n    y)"
+              "(-> x ;; |\n    y)"))
 ;(defn hello-world ...)
 #_(deftest paredit-newline
   "not much diff from default behavior except perhaps indenting
@@ -228,8 +232,10 @@
             "(foo (bar |baz) quux zot)"
             "(foo (bar |baz quux) zot)")
   (buf-test SUT/slurp-forward
+            ;; whitespace difference
+            ;; differs from ref card but agrees with emacs (intellij does something different
             "(a b ((c | d)) e f)"
-            "(a b ((c| d) e) f)"))
+            "(a b ((c | d) e) f)"))
 
 (deftest paredit-forward-barf-sexp
   (buf-test SUT/barf-forward
