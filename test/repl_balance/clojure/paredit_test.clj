@@ -282,14 +282,16 @@
              (-> (SUT/slurp-forward)
                  (join-s-cur))))))
 
-(deftest ^:kaocha/skip slurp-forward-multiline-align-test
+(deftest slurp-forward-multiline-align-test
   "slurp forward where auto-align gets things wrong"
   ;; I like the existing behavior, but it doesn't agree with emacs and
   ;; Note that emacs behavior changes if it is a "(do" container
   ;; should we ensure that this uses rewrite.clj reindent to cover more cases?
   (with-buffer
-    #_>>>> "[foo bar\n      baz|] (and a b)"
-    (is (= "[foo bar\n baz (and a b)]"
+    ;; note that is behavior is off if the outermost brackets are removed
+    ;; re: slurp-forward-reindent-no-col-offset-test
+    #_>>>> "[[foo bar\n      baz|] (and a b)]"
+    (is (= "[[foo bar\n  baz (an|d a b)]]"
            (-> (SUT/slurp-forward)
                (join-s-cur))))))
 
@@ -297,8 +299,18 @@
   "slurping included a reindent which throws off the tail
   so if we reindent we can't just cut a section out form the cursor any longer"
   (with-buffer
-    #_>>>> "(let [a 1\n      b|]\n  :ovx)"
-    (is (= "(let [a 1\n      b|\n      :ovx])"
+    ;; why are we betting one bogus space after the b as in
+    #_>>>> "(let [a 1\n      |b]\n :x\n :y)"
+    (is (= "(let [a 1\n      |b\n      :x]\n :y)"
+           (-> (SUT/slurp-forward)
+               (join-s-cur))))))
+
+(deftest ^:whitespace slurp-forward-reindent-no-col-offset-test
+  "this is showing up when the first form has no column offset"
+  (with-buffer
+    ;; why are we betting one bogus space after the b as in
+    #_>>>> "[|1]\n  2"
+    (is (= "[|1]\n 2"
            (-> (SUT/slurp-forward)
                (join-s-cur))))))
 

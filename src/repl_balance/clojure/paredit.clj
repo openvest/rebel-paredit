@@ -7,6 +7,7 @@
             [rewrite-clj.zip :as z]
             [rewrite-clj.custom-zipper.utils :as rczu]
             [repl-balance.clojure.tokenizer :as tokenize]
+            [repl-balance.zip-utils :as zip-utils]
             [clojure.string :as str]
             [clojure.edn :as edn])
   (:import [org.jline.reader.impl LineReaderImpl BufferImpl]))
@@ -53,10 +54,12 @@
   (let [offsets (str-row-offsets s)
         row-offset (-> (:row pos)
                        dec
-                       (offsets))]
+                       (offsets))
+        row-len (- (get offsets (:row pos))
+                   (get offsets (dec (:row pos))))]
     (if (first at-end?)
-      (+ row-offset (dec (:end-col pos)))
-      (+ row-offset (dec (:col pos))))))
+      (+ row-offset (dec (min (:end-col pos) row-len)))
+      (+ row-offset (dec (min (:col pos) row-len))))))
 
 (defn str-find-cursor-range
   "given a string and a position (i.e. map with [:row :col])
@@ -304,29 +307,24 @@
   "For a Buffer, slurp forward"
   ([] (slurp-forward j/*buffer*))
   ([buf]
-   (when (#{\]\)\}} (char(.currChar buf)))
+   (when (#{\]\)\}} (char (.currChar buf)))
      (doto buf
        (.write " ")
        (.move -1)))
    (let [cur (.cursor buf)
          s (str buf)
          pos (str-find-pos s cur)
-         tail (-> s
-                  (z/of-string {:track-position? true})
-                  (z/find-last-by-pos pos)
-                  (pe/slurp-forward)
-                  ;; FIXME: cannot reindent and then expect to tail
-                  ;;         to be at the same cursor position
-                  #_z/up
-                  #_((fn [loc]
-                     (z/replace loc (-> loc z/node fmt/unindent fmt/indent))))
-                  (z/root-string)
-                  (subs cur))]
+         new-s (-> s
+                   (z/of-string {:track-position? true})
+                   (z/find-last-by-pos pos)
+                   (pe/slurp-forward)
+                   (z/up)
+                   (z/edit* zip-utils/re-indent-form)
+                   (z/root-string))]
      (doto buf
-       (.write tail)
-       (.delete (- (.length buf)
-                   (.cursor buf)))
-       (.cursor cur)))))
+       (.clear)
+       (.write new-s)
+       (.cursor (str-find-cursor new-s pos))))))
 
 (defn barf-forward
   "For a Buffer, barf forward"
