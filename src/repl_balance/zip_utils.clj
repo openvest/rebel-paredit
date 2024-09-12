@@ -14,13 +14,14 @@
   the result of cljfmt/indent"
   [form]
   (let [indent (or (some-> form meta :col dec) 0)
-        spaces (apply str (repeat indent \space))]
+        spaces (apply str (repeat indent \space))
+        loc (-> form
+                fmt/unindent
+                fmt/indent
+                z/of-node)]
     (if-not (pos? indent)
-      form
-      (loop [loc (-> form
-                     fmt/unindent
-                     fmt/indent
-                     z/of-node)
+      (z/root loc)
+      (loop [loc loc
              should-add false]
         (if (z/end? loc)
           (z/root loc)

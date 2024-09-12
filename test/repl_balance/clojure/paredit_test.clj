@@ -308,9 +308,9 @@
 (deftest ^:whitespace slurp-forward-reindent-no-col-offset-test
   "this is showing up when the first form has no column offset"
   (with-buffer
-    ;; why are we betting one bogus space after the b as in
+    ;; TODO: why are we betting one bogus space after the 1 as in [|1 \n 2]
     #_>>>> "[|1]\n  2"
-    (is (= "[|1]\n 2"
+    (is (= "[|1\n 2]"
            (-> (SUT/slurp-forward)
                (join-s-cur))))))
 
