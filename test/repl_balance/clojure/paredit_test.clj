@@ -316,7 +316,7 @@
 
 ;; slurp and barf within a quoted syntax string
 (deftest ^:kaocha/pending syntax-quoted-slurp-and-barf-tests
-  "these tests currently throw errors but looks like an issue with rewrite-clj"
+  ;; "these tests currently throw errors but looks like an issue with rewrite-clj"
 
   (deftest slurp-forward-quoted-syntax-test
     "slurp forward when there is a quote i.e. invalid sexp"
@@ -799,7 +799,7 @@
                               (join-s-cur s))
                          (catch Exception _e (str "ERROR on backward movement of " orig)))))))))
 
-(deftest ^:cursor-pos ^:kaocha/pending backward-last-top-form-test
+(deftest backward-last-top-form-test
   "test for last top level form, should not go to buffer beginning"
   (with-buffer
     #_>>>> "(foo)(bar)|"

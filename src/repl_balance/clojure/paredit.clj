@@ -613,10 +613,18 @@
   ([buf] (doto buf
            (.cursor (backward (str buf) (.cursor buf)))))
   ([s cur]
-   (if (or (= cur 0)                                        ;beg of str
-           (= cur (count s)))                               ;end of str TODO: fails on multiple forms e.g. "(foo)(bar)|"
-     ;; if we are at the beginning, do nothing
+   (cond
+     ;; beginning of string so do nothing
+     (= cur 0)
      0
+     ;; end of string so go to beginning of rightmost node
+     (= cur (count s))
+     (->> (z/of-string s {:track-position? true})
+          (z/rightmost)
+          (z/node)
+          meta
+          (str-find-cursor s))
+     :default
      (let [cursor-pos (str-find-pos s cur)
            orig-loc (-> s
                         (z/of-string {:track-position? true})
