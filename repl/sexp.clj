@@ -125,12 +125,24 @@
 
 
 ;; slurp quoted
+
 (let [target (-> (z/of-string "(require '[]this)" {:track-position? true})
                  (z/down)
                  z/right)]
   (->> target
        z/right
+       ;; this only works because the vector is impty
        ((juxt z/remove z/node))
        (apply z/append-child)
        z/root-string))
+;; #_> "(require '[this])"
 
+
+(-> (z/of-string "'(foo bar) ;; some comment\n  baz")
+    ((fn [loc] (let [slurpee (-> loc z/right)]
+                 (-> slurpee
+                     (z/remove)
+                     (z/up)
+                     (z/append-child (z/node slurpee))))))
+    (z/root-string))
+;; #_> "'(foo bar baz) ;; some comment\n"

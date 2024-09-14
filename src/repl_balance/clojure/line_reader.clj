@@ -608,6 +608,11 @@
     (paredit/line-comment)
     true))
 
+(def paredit-node-comment
+  (create-widget
+    (.write *buffer* "#_")
+    true))
+
 (def reformat-widget
   "widget to reformat the buffer with cljfmt"
   (create-widget
@@ -956,7 +961,8 @@
     (register-widget "paredit-split"              paredit-split)
     (register-widget "paredit-forward"            paredit-forward)
     (register-widget "paredit-backward"           paredit-backward)
-    (register-widget "paredit-line-comment"       paredit-line-comment)))
+    (register-widget "paredit-line-comment"       paredit-line-comment)
+    (register-widget "paredit-node-comment"       paredit-node-comment)))
 
 (defn bind-indents [km-name]
   (doto km-name
@@ -983,6 +989,7 @@
     (key-binding "]" "paredit-close-round")
     (key-binding "}" "paredit-close-round")
     (key-binding ";" "paredit-line-comment")
+    (key-binding (str (KeyMap/alt ";")) "paredit-node-comment")
     (key-binding (str (KeyMap/ctrl \D)) "delete-char")      ;; replaces delete-char-or-list binding
 
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")

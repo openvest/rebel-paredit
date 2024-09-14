@@ -15,7 +15,7 @@
 
 (defn split [^AttributedString at-str regex]
   (let [s (str at-str)
-        m (.matcher #"\n" s)]
+        m (.matcher regex s)]
     (->> (repeatedly #(when (.find m)
                         [(.start m) (.end m)]))
          (take-while some?)
@@ -45,6 +45,3 @@
 
 (defn ->ansi [at-str terminal]
   (.toAnsi (.toAttributedString at-str) terminal))
-
-(defn ->ansi-256 [at-str]
-  (.toAnsi (.toAttributedString at-str) 256 true))

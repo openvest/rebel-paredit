@@ -330,11 +330,12 @@
   (if (and (seq a) (seq b))
     (lazy-seq
       (if (< (try (second (first a))
-                  (catch Exception e (throw (ex-info "oops" {}))))
+                  ;; is this still needed?
+                  (catch Exception e (throw (ex-info "error on merging" {:a a}))))
              (second (first b)))
         (cons (first a) (merge-tags (next a) b))
         (cons (first b) (merge-tags a (next b)))))
-    (or a b)))
+    (or a b nil)))
 
 (def non-interp-word-rexp
   (Pattern/compile

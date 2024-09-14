@@ -2,6 +2,7 @@
   (:require repl-balance.main
             [repl-balance.tools :as t]
             [repl-balance.jline-api :as j]
+            [repl-balance.clojure.line-reader :as line-reader]
             [repl-balance.clojure.tokenizer :as tokenizer]))
 
 ;; colorizing specific
@@ -22,11 +23,11 @@
    ["x" 5 6 :font-lock/variable-name]]
   "(def x 8)")
 ;; final step
-(repl-balance.jline-api.attributed-string/->ansi-256 *1)
+(j/->ansi *1)
 
 (repl-balance.clojure.main/syntax-highlight-prn '(def x {:foo 88}))
 ; calls this line:
-(println (api/->ansi (clj-line-reader/highlight-clj-str (pr-str x))))
+(println (api/->ansi (line-reader/highlight-clj-str (pr-str x))))
 ; which uses a tag-keyword->color fn and a str->tokenized str function
 ; returns AttributedStringBuilder
 (repl-balance.tools/highlight-tokens
@@ -87,3 +88,27 @@
     (.highlight (line-reader/create service) "(def foo [:bar :food])")
     (j/->ansi)
     (print))
+
+;; show all colors to pick one for selection
+(for [i (range 256)]
+  (j/->ansi (AttributedString.
+             (format  "bg: %3s" i)
+             (.background (t/fg-color 178) i))))
+
+;; how faint is faint?
+(for [i (range 256)]
+  (j/->ansi (AttributedString.
+             (format  "faint:%3s" i)
+             (.faint (t/fg-color i)))))
+
+; direct version
+(-> (AttributedStringBuilder.)
+    (.append "hi ")
+    (.styled (t/fg-color 120) "there")
+    (.toAttributedString)
+    (.toAnsi j/*terminal*))
+; indirect version  using j/->ansi
+(-> (AttributedStringBuilder.)
+    (.append "hi ")
+    (.styled (t/fg-color 120) "there")
+    j/->ansi)
