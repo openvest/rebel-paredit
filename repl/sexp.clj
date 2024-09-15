@@ -131,7 +131,7 @@
                  z/right)]
   (->> target
        z/right
-       ;; this only works because the vector is impty
+       ;; this only works because the vector is empty
        ((juxt z/remove z/node))
        (apply z/append-child)
        z/root-string))

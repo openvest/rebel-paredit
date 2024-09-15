@@ -34,25 +34,33 @@
 ;; String Highlighting
 ;; ----------------------------------------------
 
-(defn highlight-tokens [color-fn tokens syntax-str]
-  (let [sb (AttributedStringBuilder.)]
+(defn ^AttributedStringBuilder highlight-tokens [color-fn tokens syntax-str]
+  (let [sb (AttributedStringBuilder.)
+        syntax-str-len (count syntax-str)]
     (loop [pos 0
            hd tokens]
       (let [[_ start end sk] (first hd)]
         (cond
-          (= (.length sb) (count syntax-str)) sb
-          (= (-> hd first second) pos) ;; style active
+          ;; we are done
+          (= (.length sb) syntax-str-len)
+          sb
+          ;; do unformatted substring
+          (> start pos)
+          (do (.append sb (subs syntax-str pos start))
+              (recur start hd))
+          ;; do styled substring
+          (= start  pos) ;; style active
           (do
             (if-let [st (color-fn sk)]
               (.styled sb st (subs syntax-str start end))
               (.append sb (subs syntax-str start end)))
             (recur end (rest hd)))
-          ;; TODO this could be faster if we append whole sections
-          ;; instead of advancing one char at a time
-          ;; but its pretty fast now
+          ;; this should not happen
+          ;; send a display-message or throw an error?
           :else
-          (do (.append sb (.charAt syntax-str pos))
-              (recur (inc pos) hd)))))))
+          (do
+            (.append sb (.charAt syntax-str pos))
+            (recur (inc pos) hd)))))))
 
 (defn highlight-str [color-fn tokenizer-fn syntax-str]
   (highlight-tokens color-fn (tokenizer-fn syntax-str) syntax-str))

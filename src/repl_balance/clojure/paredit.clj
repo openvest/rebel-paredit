@@ -269,6 +269,10 @@
              (subs s extra-kill))
         cur  (- extra-kill cur)]))))
 
+
+;; TODO: is this right?  we manipulate the buffer but perhaps,
+;;       after we calculate the (paredit)kill region we could set
+;        the mark and point and use the builtin .kill-region widget
 (defn kill-in-buff
   []
   (let [s (str j/*buffer*)
