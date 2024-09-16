@@ -44,17 +44,20 @@
           ;; we are done
           (= (.length sb) syntax-str-len)
           sb
-          ;; do unformatted substring
-          (> start pos)
-          (do (.append sb (subs syntax-str pos start))
-              (recur start hd))
+          ;; we are almost done, no more formatting so just append
+          (nil? start)
+          (doto sb (.append (subs syntax-str pos)))
           ;; do styled substring
-          (= start  pos) ;; style active
+          (= start pos)                                     ;; style active
           (do
             (if-let [st (color-fn sk)]
               (.styled sb st (subs syntax-str start end))
               (.append sb (subs syntax-str start end)))
             (recur end (rest hd)))
+          ;; do unformatted substring
+          (> start pos)
+          (do (.append sb (subs syntax-str pos start))
+              (recur start hd))
           ;; this should not happen
           ;; send a display-message or throw an error?
           :else
