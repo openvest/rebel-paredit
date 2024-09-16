@@ -246,3 +246,86 @@
    :widget/error             (fg-color 1)})
 
 (register-color-theme! :neutral-screen-theme neutral-screen-theme)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn color+
+  "replacement for tools/color that does the same lookup
+   but if not found attempts to find the style without -highlight
+   and adds background color"
+  [sk]
+  (let [color-map (-> (get @api/*line-reader* :color-theme)
+                      color-themes)]
+    (if-let [style (get color-map sk)]
+      style
+      (if-let [[_ sub-tag] (re-matches #"(.*)-highlight" (name sk))]
+        (-> (keyword (namespace sk) sub-tag)
+            (color-map AttributedStyle/DEFAULT)
+            (.background 242))
+        AttributedStyle/DEFAULT))))
+
+(defn highlight-keyword+
+  "take a keyword and append -highlight to it"
+  [kw]
+  (keyword (namespace kw) (str (name kw) "-highlight")))
+
+;; TODO: loop recur? or lazy-seq?
+(defn tokenize-highlight+
+  "takes tokens and a region with [beg-hl end-hl] keys and
+  return tokens with the highlighting tags added to the region"
+  [tokens s cur {:keys [beg-hl end-hl] :as region}]
+  (let [[sub beg end tag :as token] (first tokens)]
+    ;(println token)
+    ;(print (str cur " " (subs s 0 cur) "|" (subs s cur) "\n\n"))
+    (if (and (nil? token) (<= cur end-hl))
+      ;; no more tokens but more to highlight
+      [[(subs s cur end-hl) cur end-hl :insert-highlight]]
+      (cond
+        ;; token ends before highlighting begins (b)
+        (<= end beg-hl)
+        (cons token
+              (tokenize-highlight+ (rest tokens) s end region))
+        ;; highlighting started on or after cursor but before this token
+        (and (< beg-hl beg) (< cur beg) (< cur end-hl))
+        (let [b (max cur beg-hl)
+              e (min beg end-hl)]
+          ; (println (subs s b e) b e  :insert-highlight)
+          (if (< b e)
+            (cons [(subs s b e) b e  :insert-highlight]
+                  (tokenize-highlight+ tokens s e region))
+            (tokenize-highlight+ tokens s e region)))
+        ;; token entirely within the highlight region (d)
+        (and (= beg cur) (<= beg-hl beg) (<= end end-hl))
+        (cons [sub beg end (highlight-keyword+ tag)]
+              (tokenize-highlight+ (rest tokens) s end region))
+        ;; highlighting ended before token but after prev cursor
+        (<= end-hl beg)
+        (if (< cur end-hl)
+          ;; produce new token to highlight plain text (e)
+          (let [b (max cur beg-hl)
+                e (min beg end-hl)]
+            (concat [[(subs s b e) b e  :insert-highlight]]
+                    tokens))
+          tokens)
+        ;; token begins after highlighting began but ends before highlighting ends
+        ;; first half highlighted second half not highlighted
+        (and (<= beg-hl beg) (< end-hl end))
+        (let [b (max cur beg-hl)
+              e (min beg end-hl)]
+          (concat [[(subs s b end-hl) b end-hl (highlight-keyword+ tag)]
+                   [(subs s end-hl end) end-hl end tag]]
+                  (tokenize-highlight+
+                    (rest tokens) s end region)))
+        ;; token began before highlighting began
+        ;; first half not highlighted second half highlighted
+        (< beg beg-hl)
+        (concat [[(subs s beg beg-hl)
+                  beg beg-hl tag]
+                 [(subs s beg-hl end)
+                  beg-hl end (highlight-keyword+ tag)]]
+                (tokenize-highlight+
+                  (rest tokens) s end region))
+        ;; should have covered everything
+        :default
+        [[(str cur " " tag) beg end :error]] #_(cons
+              (tokenize-highlight+ (rest tokens) s end region))))))
