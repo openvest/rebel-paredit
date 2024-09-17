@@ -286,7 +286,7 @@
         (cons token
               (tokenize-highlight+ (rest tokens) s end region))
         ;; highlighting started on or after cursor but before this token
-        (and (< beg-hl beg) (< cur beg) (< cur end-hl))
+        (and (<= beg-hl beg) (< cur beg) (< cur end-hl))
         (let [b (max cur beg-hl)
               e (min beg end-hl)]
           ; (println (subs s b e) b e  :insert-highlight)
