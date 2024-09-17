@@ -258,6 +258,7 @@
                       color-themes)]
     (if-let [style (get color-map sk)]
       style
+      ;; TODO: this is suspect, should we just add these to the color-map?
       (if-let [[_ sub-tag] (re-matches #"(.*)-highlight" (name sk))]
         (-> (keyword (namespace sk) sub-tag)
             (color-map AttributedStyle/DEFAULT)
@@ -277,9 +278,10 @@
   (let [[sub beg end tag :as token] (first tokens)]
     ;(println token)
     ;(print (str cur " " (subs s 0 cur) "|" (subs s cur) "\n\n"))
-    (if (and (nil? token) (<= cur end-hl))
-      ;; no more tokens but more to highlight
-      [[(subs s cur end-hl) cur end-hl :insert-highlight]]
+    (if (nil? token)
+      (when (<= cur end-hl)
+        ;; no more tokens but more to highlight
+        [[(subs s cur end-hl) cur end-hl :insert-highlight]])
       (cond
         ;; token ends before highlighting begins (b)
         (<= end beg-hl)
@@ -321,8 +323,11 @@
         (< beg beg-hl)
         (concat [[(subs s beg beg-hl)
                   beg beg-hl tag]
-                 [(subs s beg-hl end)
-                  beg-hl end (highlight-keyword+ tag)]]
+                 [(subs s beg-hl (min end-hl end))
+                  beg-hl (min end-hl end) (highlight-keyword+ tag)]]
+                (when (< end-hl end)
+                  [[(subs s end-hl end)
+                    end-hl end tag]])
                 (tokenize-highlight+
                   (rest tokens) s end region))
         ;; should have covered everything
