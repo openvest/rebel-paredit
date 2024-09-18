@@ -6,7 +6,7 @@
    [repl-balance.clojure.tokenizer :as tokenize]
    [repl-balance.clojure.sexp :as sexp]
    [repl-balance.clojure.paredit :as paredit]
-   [repl-balance.tools :as tools :refer [color service-dispatch]]
+   [repl-balance.tools :as tools :refer [color color+ service-dispatch]]
    [repl-balance.utils :as utils :refer [log]]
    [rewrite-clj.parser :as p]
    [rewrite-clj.node :as n]
@@ -28,6 +28,7 @@
     ParsedLine
     LineReader
     LineReader$Option
+    LineReader$RegionType
     LineReaderBuilder
     UserInterruptException
     EndOfFileException
@@ -992,6 +993,7 @@
     (key-binding (str (KeyMap/alt ";")) "paredit-node-comment")
     (key-binding (str (KeyMap/ctrl \D)) "delete-char")      ;; replaces delete-char-or-list binding
 
+    (key-binding (str (KeyMap/ctrl \W)) "kill-region")
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
     (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp") ; osx esc-( works but not alt or command (
     (key-binding (str (KeyMap/alt \s)) "paredit-splice")
@@ -1259,10 +1261,16 @@
       (binding [*line-reader* reader
                 *buffer* (.getBuffer reader)]
         (if (:highlight @reader)
-          (let [cur (.cursor *buffer*)]
-           (.toAttributedString (tools/highlight-tokens color
-                                                        (sexp/tag-font-lock+ buffer cur)
-                                                        buffer)))
+          (let [cur (.cursor *buffer*)
+                region (when (= LineReader$RegionType/CHAR (.getRegionActive reader))
+                         (let [mark (.getRegionMark reader)]
+                           (cond
+                             (<= cur mark) {:beg-hl cur :end-hl mark}
+                             (> cur mark) {:beg-hl mark :end-hl cur})))
+                tokens (cond-> (sexp/tag-font-lock+ buffer cur)
+                               region (tools/tokenize-highlight+ buffer 0 region))]
+            (do display-message (str :region region)
+             (.toAttributedString (tools/highlight-tokens color+ tokens buffer))))
           (AttributedString. buffer))))))
 
 ;; ----------------------------------------
