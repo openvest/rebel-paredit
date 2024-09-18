@@ -650,6 +650,8 @@
         (call-widget LineReader/COMPLETE_WORD))
       true)))
 
+
+
 ;; ------------------------------------------------
 ;; Display argument docs on keypress functionality
 ;; ------------------------------------------------
@@ -703,6 +705,13 @@
       (when-let [message (display-argument-help-message)]
         (reset! ttd-atom 1)
         (display-message message)))))
+
+(defn deactivate-region
+  "self-inset hook to deactivate the region when typing starts"
+  []
+  ;; this is emacs behavior.
+  ;; maybe intelliJ action of deleting selection first is nicer
+  (.deactivateRegion *line-reader*))
 
 (defn word-at-cursor []
   (sexp/word-at-position (buffer-as-string) (cursor)))
@@ -923,6 +932,20 @@
    (cursor 0)
    true))
 
+(def set-or-clear-mark-command
+  (create-widget
+   ;; default does not deactivate is already active
+   (if (= LineReader$RegionType/CHAR (.getRegionActive *line-reader*))
+     (.deactivateRegion *line-reader*)
+     (call-widget ".set-mark-command"))
+   true))
+
+(def copy-region-as-kill
+  "default behavior leaves the region activate"
+  (create-widget
+    (call-widget ".copy-region-as-kill")
+    (deactivate-region)))
+
 ;; --------------------------------------------
 ;; Base Widget registration and binding helpers
 ;; --------------------------------------------
@@ -942,6 +965,8 @@
 
     (register-widget "end-of-buffer"              end-of-buffer)
     (register-widget "beginning-of-buffer"        beginning-of-buffer)
+    (register-widget "set-mark-command"           set-or-clear-mark-command)
+    (register-widget "copy-region-as-kill"        copy-region-as-kill)
 
     (register-widget "paredit-open-round" paredit-open-round )
     (register-widget "paredit-open-square" paredit-open-square )
@@ -994,6 +1019,7 @@
     (key-binding (str (KeyMap/ctrl \D)) "delete-char")      ;; replaces delete-char-or-list binding
 
     (key-binding (str (KeyMap/ctrl \W)) "kill-region")
+    (key-binding (str (KeyMap/alt \w))  "copy-region-as-kill")
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
     (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp") ; osx esc-( works but not alt or command (
     (key-binding (str (KeyMap/alt \s)) "paredit-splice")
@@ -1057,6 +1083,7 @@
     (clojure-vi-insert-mode :viins)
     (clojure-vi-cmd-mode :vicmd)
     (swap! line-reader #(update % :self-insert-hooks (fnil conj #{}) eldoc-self-insert-hook))
+    (swap! line-reader #(update % :self-insert-hooks (fnil conj #{}) deactivate-region))
     (doto line-reader
       (.setVariable LineReader/WORDCHARS "")
       add-all-widgets)))

@@ -160,6 +160,7 @@
    :font-lock/type           (.bold (fg-color 123))
    :font-lock/foreign        (.bold (fg-color 220))
    :font-lock/builtin        (.bold (fg-color 167))
+   :region-background        26
 
    :widget/half-contrast     (fg-color 243)
    :widget/half-contrast-inverse (.inverse (fg-color 243))
@@ -198,6 +199,7 @@
          :font-lock/foreign         (.bold (fg-color 97))
          :font-lock/doc             (.bold (fg-color 132))
          :font-lock/comment         (.bold (fg-color 247))
+         :region-background         153
 
          :widget/eldoc-namespace    (fg-color 28)
          :widget/eldoc-varname      (fg-color 21)
@@ -224,6 +226,7 @@
    :font-lock/type           (.bold (fg-color 1))
    :font-lock/foreign        (.bold (fg-color 1))
    :font-lock/builtin        (.bold (fg-color 6))
+   :region-background        153
 
    :widget/half-contrast     (fg-color 7)
    :widget/half-contrast-inverse (.inverse (fg-color 7))
@@ -262,7 +265,7 @@
       (if-let [[_ sub-tag] (re-matches #"(.*)-highlight" (name sk))]
         (-> (keyword (namespace sk) sub-tag)
             (color-map AttributedStyle/DEFAULT)
-            (.background 242))
+            (.background (get color-map :region-background 20)))
         AttributedStyle/DEFAULT))))
 
 (defn highlight-keyword+
@@ -276,8 +279,6 @@
   return tokens with the highlighting tags added to the region"
   [tokens s cur {:keys [beg-hl end-hl] :as region}]
   (let [[sub beg end tag :as token] (first tokens)]
-    ;(println token)
-    ;(print (str cur " " (subs s 0 cur) "|" (subs s cur) "\n\n"))
     (if (nil? token)
       (when (<= cur end-hl)
         ;; no more tokens but more to highlight
@@ -291,7 +292,6 @@
         (and (<= beg-hl beg) (< cur beg) (< cur end-hl))
         (let [b (max cur beg-hl)
               e (min beg end-hl)]
-          ; (println (subs s b e) b e  :insert-highlight)
           (if (< b e)
             (cons [(subs s b e) b e  :insert-highlight]
                   (tokenize-highlight+ tokens s e region))
@@ -332,5 +332,5 @@
                   (rest tokens) s end region))
         ;; should have covered everything
         :default
-        [[(str cur " " tag) beg end :error]] #_(cons
-              (tokenize-highlight+ (rest tokens) s end region))))))
+        [[(str cur " " tag) beg end :error]]
+        #_(cons (tokenize-highlight+ (rest tokens) s end region))))))
