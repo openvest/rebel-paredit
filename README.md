@@ -12,22 +12,6 @@ A terminal readline library for Clojure Dialects.  Forked from rebel-readline th
 - work on remote machines
 - work inside docker containers (where there's no editor with plugins)
 
-## Important note!!!
-
-The line reader will attempt to manipulate the terminal that initiates
-the JVM process. For this reason it is important to start your JVM in
-a terminal.
-
-That means you should launch your Java process using the
-
- * the java command
- * the Clojure `clojure` tool (without readline support)
- * lein trampoline
- * boot - would need to run in boot's worker pod
-
-Launching the terminal readline process from another Java process will not work.
-
-It's best to not launch this readline behind other readline tools like `rlwrap`.
 
 ## Quick try
 
@@ -38,7 +22,7 @@ If you want to try this really quickly
 and then invoke this:
 
 ```shell
-clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.2.81\"}}}" -m repl-balance.main
+clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.2.102\"}}}" -m repl-balance.main
 ```
 
 That should start a Clojure REPL that takes its input from the ReplBalance readline editor.
@@ -51,7 +35,7 @@ Alternatively you can specify an alias in your `$HOME/.clojure/deps.edn`
 ```clojure
 {
  ...
- :aliases {:repl/balance {:extra-deps {com.openvest/repl-balance {:mvn/version "0.2.81"}}
+ :aliases {:repl/balance {:extra-deps {com.openvest/repl-balance {:mvn/version "0.2.102"}}
                           :main-opts  ["-m" "repl-balance.main"]}}
 }
 ```
@@ -64,7 +48,7 @@ $ clojure -M:repl/balance
 
 #### Leiningen
 
-Add `[com.openvest/repl-balance "0.2.81"]` to the dependencies in your
+Add `[com.openvest/repl-balance "0.2.102"]` to the dependencies in your
 `project.clj` then start a REPL like this:
 
 ```shell
