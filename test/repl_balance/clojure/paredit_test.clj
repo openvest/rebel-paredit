@@ -813,6 +813,17 @@
                "; Hello, world!|\n"
                "; Hello, world!]|\n"))
 
+(deftest paredit-close-round-outside
+  "if the cursor is at the buffer end or in between but outside top level forms
+   don't insert"
+  (reader-test SUT/close-round ")"
+               "(def x 42)|"
+               "(def x 42)|")
+  (reader-test SUT/close-round ")"
+               "(def x 42)|\n(def y 13)"
+               "(def x 42)|\n(def y 13)"))
+(def x 42)
+(def y 13)
 (deftest ^:balance paredit-comment-b4-opening-test
   "The key here is to not break paren balance"
   (s-cur-test SUT/line-comment

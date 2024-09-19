@@ -327,11 +327,12 @@
 (defn merge-tags
   "merge two vectors of [str beg end tag] by beg-index"
   [a b]
-  (if (and (seq a) (seq b))
+  ;; FIXME: why is an "x" is null error fouling up here?
+  ;;        why doesn't (and (seq a) (seq b)) work
+  (if (and (second (first (seq a)))
+           (second (first (seq b))))
     (lazy-seq
-      (if (< (try (second (first a))
-                  ;; is this still needed?
-                  (catch Exception e (throw (ex-info "error on merging" {:a a}))))
+      (if (< (second (first a))
              (second (first b)))
         (cons (first a) (merge-tags (next a) b))
         (cons (first b) (merge-tags a (next b)))))

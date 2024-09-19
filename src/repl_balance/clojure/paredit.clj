@@ -766,25 +766,28 @@
 
 (defn close-round
   ([] (close-round j/*buffer*))
-  ([buf] (cond
-           ;; in a literal
-           (is-literal? (str buf) (.cursor buf))
-           (doto buf (.write (.getLastBinding j/*line-reader*)))
-           ;; at buff end. TODO: should also check for top level forms
-           (= (.cursor buf) (.length buf))
-           buf  ;; send a message?
-           :default
-           (let [s (str buf)
-                 cur (.cursor buf)
-                 [_ _ end _] (some-> (tokenize/tag-sexp-traversal s)
-                                     (sexp/find-open-sexp-end cur))
-                 space-before-delimiter (count (re-find #"\s+$" (subs s 0 (dec end))))]
-             (.cursor buf end)
-             (when (pos? space-before-delimiter)
-               (doto buf
-                 (.cursor (- end space-before-delimiter 1))
-                 (.delete space-before-delimiter)
-                 (.move 1)))))))
+  ([buf]
+   ;; TODO: check for imbalance and allow a close round to correct that
+   (let [s (str buf)
+         cur (.cursor buf)
+         end (some-> (tokenize/tag-sexp-traversal s)
+                     (sexp/find-open-sexp-end cur)
+                     (nth 2))]
+     (cond
+      ;; in a literal
+      (is-literal? (str buf) (.cursor buf))
+      (doto buf (.write (.getLastBinding j/*line-reader*)))
+      ;; at buff end or just not inside a list
+      (nil? end)
+      buf  ;; send a message?
+      :default
+      (let [space-before-delimiter (count (re-find #"\s+$" (subs s 0 (dec end))))]
+        (.cursor buf end)
+        (when (pos? space-before-delimiter)
+          (doto buf
+            (.cursor (- end space-before-delimiter 1))
+            (.delete space-before-delimiter)
+            (.move 1))))))))
 
 ;; deleting char or word
 
