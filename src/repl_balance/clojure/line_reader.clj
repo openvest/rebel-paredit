@@ -524,6 +524,10 @@
     (paredit/delete-char)
     true))
 
+(def paredit-forward-kill-word
+  (create-widget
+    (paredit/forward-kill-word)
+    true))
 
 ;; -----------------------------------------
 ;; paredit widgets
@@ -975,6 +979,7 @@
     (register-widget "paredit-doublequote" paredit-doublequote )
     (register-widget "backward-delete-char" paredit-backward-delete-char )
     (register-widget "delete-char" paredit-delete-char )
+    (register-widget "kill-word"   paredit-forward-kill-word )
 
     (register-widget "paredit-kill"               paredit-kill)
     (register-widget "paredit-slurp-forward"      paredit-slurp-forward)
@@ -1017,6 +1022,7 @@
     (key-binding ";" "paredit-line-comment")
     (key-binding (str (KeyMap/alt ";")) "paredit-node-comment")
     (key-binding (str (KeyMap/ctrl \D)) "delete-char")      ;; replaces delete-char-or-list binding
+    (key-binding (str (KeyMap/alt \d)) "kill-word")
 
     (key-binding (str (KeyMap/ctrl \W)) "kill-region")
     (key-binding (str (KeyMap/alt \w))  "copy-region-as-kill")

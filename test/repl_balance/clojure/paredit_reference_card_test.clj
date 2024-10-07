@@ -176,8 +176,22 @@
               "(foo \"|bar baz\"\n     quux)"
               "(foo \"|\"\n     quux)"))
 
-#_(deftest paredit-forward-kill-word
-  )
+(deftest paredit-forward-kill-word
+  (buf-test SUT/forward-kill-word
+              "|(foo bar) ; baz"
+              "(| bar) ; baz")
+  (buf-test SUT/forward-kill-word
+              "(| bar) ; baz"
+              "(|) ; baz")
+  (buf-test SUT/forward-kill-word
+              "(|) ; baz"
+              "() ;|")
+  (buf-test SUT/forward-kill-word
+              ";;;| Frobnicate\n(defun frobnicate ...)"
+              ";;;|\n(defun frobnicate ...)")
+  (buf-test SUT/forward-kill-word
+              ";;;|\n(defun frobnicate ...)"
+              ";;;\n(| frobnicate ...)"))
 
 #_(deftest paredit-backward-kill-word
   )

@@ -305,6 +305,17 @@
                      (.cursor buf)))
          (.cursor cur))))))
 
+(defn forward-kill-word
+  ([] (forward-kill-word j/*buffer*))
+  ([buf] (let [s (str buf)
+               cur (.cursor buf)
+               m (re-matcher #"(?:\s*[-:]?)?\w+" (subs s cur))]
+           (if-not (re-find m)
+             buf
+             (doto buf
+               (.cursor (+ cur (.start m)))
+               (.delete (- (.end m) (.start m))))))))
+
 ;; slurp and barf
 
 (defn slurp-forward
