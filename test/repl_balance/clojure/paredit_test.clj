@@ -5,7 +5,7 @@
             [rewrite-clj.zip :as z]
             [clojure.string :as str]
             [clojure.test :refer :all]
-            [repl-balance.test-helpers :refer [split-s-cur join-s-cur s-cur-test reader-test]])
+            [repl-balance.test-helpers :refer [split-s-cur join-s-cur buf-test s-cur-test reader-test]])
   (:import [org.jline.reader.impl LineReaderImpl BufferImpl]))
 
 ;; items marked ^:wip are work in progress where non error returns are produced
@@ -263,6 +263,15 @@
         [end-str end-cur] (SUT/kill beg-str beg-cur)]
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
+
+(deftest kill-whole-line
+  "kill the entire current line without breaking balance"
+  (buf-test SUT/kill-whole-line
+            "(def x (first \nfoo) |[:bar]) [ {baz\nquux}]"
+            "(def x (first ))\n|[{quux}]")
+  (buf-test SUT/kill-whole-line
+            "[1\n| 2 [3\n    4]]"
+            "[1\n|[    4]]"))
 
 ;; slurp and barf tests
 

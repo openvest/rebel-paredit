@@ -529,6 +529,11 @@
     (paredit/forward-kill-word)
     true))
 
+(def paredit-kill-whole-line
+  (create-widget
+    (paredit/kill-whole-line)
+    true))
+
 ;; -----------------------------------------
 ;; paredit widgets
 ;; -----------------------------------------
@@ -980,6 +985,7 @@
     (register-widget "backward-delete-char" paredit-backward-delete-char )
     (register-widget "delete-char" paredit-delete-char )
     (register-widget "kill-word"   paredit-forward-kill-word )
+    (register-widget "kill-whole-line"   paredit-kill-whole-line )
 
     (register-widget "paredit-kill"               paredit-kill)
     (register-widget "paredit-slurp-forward"      paredit-slurp-forward)

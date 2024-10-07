@@ -306,6 +306,7 @@
          (.cursor cur))))))
 
 (defn forward-kill-word
+  "kill the next word skipping over delimiters like parens"
   ([] (forward-kill-word j/*buffer*))
   ([buf] (let [s (str buf)
                cur (.cursor buf)
@@ -315,6 +316,31 @@
              (doto buf
                (.cursor (+ cur (.start m)))
                (.delete (- (.end m) (.start m))))))))
+
+(defn kill-whole-line
+  ([] (kill-whole-line j/*buffer*))
+  ([buf] (let [s (str buf)
+               cur (.cursor buf)
+               [start end] (->> (str-row-offsets s)
+                                (partition 2 1)
+                                (drop-while #(>= cur (second %)))
+                                first)
+               tokens (tokenize/tag-sexp-traversal (subs s start end))
+               closers (some->> (sexp/find-open-sexp-ends tokens 0)
+                                (map first)
+                                (apply str))
+               openers (some->> (sexp/find-open-sexp-starts tokens (- end start))
+                                (map first)
+                                reverse
+                                (apply str))
+               start (cond-> start
+                             (pos? start) dec)
+               newline (str closers \newline openers)]
+           (doto buf
+             (.cursor start)
+             (.delete (- end start))
+             (.write newline)
+             (.cursor (+ start (count closers) 1))))))
 
 ;; slurp and barf
 
