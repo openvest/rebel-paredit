@@ -195,6 +195,13 @@
     (is (= new-str end-str))
     (is (= new-cur end-cur))))
 
+(deftest ^:kaocha/pending ^:balance kill-multiple-top-level-forms
+  (let [[beg-str beg-cur] (split-s-cur "['x\n| 'y] [:bar\n      :baz]")
+        [new-str new-cur] (split-s-cur "['x\n|] [:bar\n      :baz]")
+        [end-str end-cur] (SUT/kill beg-str beg-cur)]
+    (is (= new-str end-str))
+    (is (= new-cur end-cur))))
+
 ; TODO: this test requires a killRing inside a line-reader.  Can't (yet) create this in testing
 #_(deftest ^:wip kill-require-in-buf-test
   "wierd case of error inside a require"
@@ -271,7 +278,9 @@
             "(def x (first ))\n|[{quux}]")
   (buf-test SUT/kill-whole-line
             "[1\n| 2 [3\n    4]]"
-            "[1\n|[    4]]"))
+            "[1\n|[4]]"))
+
+; add test for kill region this may require testing the widget
 
 ;; slurp and barf tests
 
@@ -831,8 +840,7 @@
   (reader-test SUT/close-round ")"
                "(def x 42)|\n(def y 13)"
                "(def x 42)|\n(def y 13)"))
-(def x 42)
-(def y 13)
+
 (deftest ^:balance paredit-comment-b4-opening-test
   "The key here is to not break paren balance"
   (s-cur-test SUT/line-comment

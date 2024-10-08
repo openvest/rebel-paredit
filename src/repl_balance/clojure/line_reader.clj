@@ -532,6 +532,7 @@
 (def paredit-kill-whole-line
   (create-widget
     (paredit/kill-whole-line)
+    (call-widget "clojure-indent-line")
     true))
 
 ;; -----------------------------------------
@@ -541,6 +542,17 @@
 (def paredit-kill
   (create-widget
     (paredit/kill-in-buff)
+    true))
+
+(def paredit-kill-region
+  (create-widget
+    (call-widget ".kill-region")
+    ;; why doesn't this work?
+    #_ (reinsert-killed-delimiters)
+    (let [[closers openers] (paredit/get-killed-delimiters)]
+      (doto api/*buffer*
+       (.write (str closers openers))
+       (.move (- (count openers)))))
     true))
 
 (def paredit-kill-debug
@@ -988,6 +1000,7 @@
     (register-widget "kill-whole-line"   paredit-kill-whole-line )
 
     (register-widget "paredit-kill"               paredit-kill)
+    (register-widget "paredit-kill-region"        paredit-kill-region)
     (register-widget "paredit-slurp-forward"      paredit-slurp-forward)
     (register-widget "paredit-slurp-backward"     paredit-slurp-backward)
     (register-widget "paredit-barf-forward"       paredit-barf-forward)
@@ -1030,7 +1043,7 @@
     (key-binding (str (KeyMap/ctrl \D)) "delete-char")      ;; replaces delete-char-or-list binding
     (key-binding (str (KeyMap/alt \d)) "kill-word")
 
-    (key-binding (str (KeyMap/ctrl \W)) "kill-region")
+    (key-binding (str (KeyMap/ctrl \W)) "paredit-kill-region")
     (key-binding (str (KeyMap/alt \w))  "copy-region-as-kill")
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
     (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp") ; osx esc-( works but not alt or command (

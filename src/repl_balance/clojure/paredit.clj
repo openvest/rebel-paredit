@@ -335,12 +335,44 @@
                                 (apply str))
                start (cond-> start
                              (pos? start) dec)
+               end (cond-> end
+                           openers (+ (count (re-find #"^ +" (subs s end)))))
                newline (str closers \newline openers)]
            (doto buf
              (.cursor start)
              (.delete (- end start))
              (.write newline)
              (.cursor (+ start (count closers) 1))))))
+
+(defn reinsert-killed-delimiters
+  "This should be called AFTER the default `.kill-region` widget
+  this then adds back any required delimiters"
+  ([] (kill-whole-line j/*buffer*))
+  ([buf] (let [killed (j/yank-from-killRing)
+                   tokens (tokenize/tag-sexp-traversal killed)
+                   closers (some->> (sexp/find-open-sexp-ends tokens 0)
+                                    (map first)
+                                    (apply str))
+                   openers (some->> (sexp/find-open-sexp-starts tokens (count killed))
+                                    (map first)
+                                    reverse
+                                    (apply str))]
+               (doto buf
+                 (.cursor 0)
+                 (.write (str closers openers))
+                 (.move (- (count openers)))))))
+
+(defn get-killed-delimiters []
+  (let [killed (j/yank-from-killRing)
+        tokens (tokenize/tag-sexp-traversal killed)
+        closers (some->> (sexp/find-open-sexp-ends tokens 0)
+                         (map first)
+                         (apply str))
+        openers (some->> (sexp/find-open-sexp-starts tokens (count killed))
+                         (map first)
+                         reverse
+                         (apply str))]
+    [closers openers]))
 
 ;; slurp and barf
 
