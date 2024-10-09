@@ -100,7 +100,7 @@ Note that `lein run -m repl-balance.main` will not work! See above.
 
 ## How do I default to vi bindings?
 
-In `~/.clojure/rebel_readline.edn` put
+In `~/.clojure/repl_balance.edn` put
 
 ```
 {:key-map :viins}
@@ -108,7 +108,7 @@ In `~/.clojure/rebel_readline.edn` put
 
 ## Config
 
-In `~/.clojure/rebel_readline.edn` you can provide a map with the
+In `~/.clojure/repl_balance.edn` you can provide a map with the
 following options:
 
 ```
@@ -234,7 +234,8 @@ The more common service is the
 local clojure process to provide this functionality and its a good
 example of how a service works.
 
-https://github.com.openvest/repl-balance/blob/master/repl-balance/src/rebel_readline/clojure/service/local.clj
+https://github.com/openvest/repl-balance/blob/master/src/repl_balance/clojure/service/local.clj
+
 
 In general, it's much better if the service is querying the Clojure process
 where the eventual REPL eval takes place.
