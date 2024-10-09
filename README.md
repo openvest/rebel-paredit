@@ -11,11 +11,12 @@ A terminal readline library for Clojure Dialects.  Forked from rebel-readline th
 - no-editor required (no ide requirements for new clojure devs)
 - work on remote machines
 - work inside docker containers (where there's no editor with plugins)
+- extend with clojure. not elisp, fennel, kotlin, vimscript or any other (inferior) langauage.
 
 
 ## Quick try
 
-#### Clojure tools
+### Clojure tools
 
 If you want to try this really quickly
 [install the Clojure CLI tools](https://clojure.org/guides/getting_started)
@@ -75,7 +76,7 @@ To make this less verbose you can use an alias in your `project.clj`:
 ```clojure
 {
  ...
- :aliases {"rebl" ["trampoline" "run" "-m" "repl-balance.main"]}
+ :aliases {"repl-balance" ["trampoline" "run" "-m" "repl-balance.main"]}
 }
 ```
 
@@ -84,83 +85,12 @@ Alternatively, you can do this globally in `$HOME/.lein/profiles.clj`:
 ```clojure
 {
  ...
- :user {:aliases {"rebl" ["trampoline" "run" "-m" "repl-balance.main"]}}
+ :user {:aliases {"repl-balance" ["trampoline" "run" "-m" "repl-balance.main"]}}
 }
 ```
 
-Now you can start a repl-balance REPL with `lein rebl`.
+Now you can start a repl-balance REPL with `lein repl-balance`.
 
-#### Clone repo
-
-Clone this repo and then from the `repl-balance` sub-directory
-typing `lein trampoline run -m repl-balance.main` will get you into
-a Clojure REPL with the readline editor working.
-
-Note that `lein run -m repl-balance.main` will not work! See above.
-
-## How do I default to vi bindings?
-
-In `~/.clojure/repl_balance.edn` put
-
-```
-{:key-map :viins}
-```
-
-## Config
-
-In `~/.clojure/repl_balance.edn` you can provide a map with the
-following options:
-
-```
-:key-map         - either :viins or :emacs. Defaults to :emacs
-
-:key-bindings    - map of key-bindings that get applied after all other key 
-                   bindings have been applied
-
-:widgets         - list of widgets (actions) that can be bound to keys
-
-:color-theme     - either :light-screen-theme or :dark-screen-theme
-
-:highlight       - boolean, whether to syntax highlight or not. Defaults to true
-
-:completion      - boolean, whether to complete on tab. Defaults to true
-
-:eldoc           - boolean, whether to display function docs as you type.
-                   Defaults to true
-
-:indent          - boolean, whether to auto indent code on newline. Defaults to true
-
-:redirect-output - boolean, rebinds root *out* during read to protect linereader
-                   Defaults to true
-                   
-```
-
-#### Key binding config
-
-You can configure key bindings in the config file, but your milage may vary.
-
-Example:
-
-```
-{ 
-...
-:key-bindings { :emacs [["^D" :clojure-doc-at-point]] 
-                :viins [["^J" :clojure-force-accept-line]] }
-}
-```
-
-Serialized keybindings are tricky and the keybinding strings are translated with
-`org.jline.keymap.KeyMap/translate` which is a bit peculiar in how it translates things.
-
-If you want literal characters you can use a list of chars or ints i.e
-`(\\ \d)` instead of the serialized key names. So you can use `(4 4)` inplace of `"^D^D"`.
-
-The best way to look up the available widget names is to use the `:repl/key-bindings`
-command at the REPL prompt.
-
-Note: I have found that JLine handles control characters and
-alphanumeric characters quite well but if you want to bind special
-characters you shouldn't be surprised if it doesn't work.
 
 ## Quick Lay of the land
 
@@ -252,39 +182,6 @@ don't have a Service for it. In this case you can just use a
 do this you can expect less than optimal results but multi-line
 editing, syntax highlighting, auto indenting will all work just fine.
 
-## Key-bindings
-
-**Bindings of interest**
-
-* Ctrl-C => aborts editing the current line
-* Ctrl-D at the start of a line => sends an end of stream message
-  which in most cases should quit the REPL
-
-* TAB => word completion or code indent if the cursor is in the whitespace at the
-  start of a line
-* Ctrl-X_Ctrl-F => Reformat
-* Ctrl-X_Ctrl-D => Show documentation for word at point
-* Ctrl-X_Ctrl-S => Show source for word at point
-* Ctrl-X_Ctrl-A => Show apropos for word at point
-* Ctrl-X_Ctrl-E => Inline eval for SEXP before the point
-
-You can examine the key-bindings with the `:repl/key-bindings` command.
-
-## Commands
-
-There is a command system. If the line starts with a "repl" namespaced
-keyword then the line-reader will attempt to interpret it as a command.
-
-Type `:repl/help` or `:repl` TAB to see a list of available commands.
-
-You can add new commands by adding methods to the
-`repl-balance.commands/command` multimethod. You can add
-documentation for the command by adding a method to the
-`repl-balance.commands/command-doc` multimethod.
-
-## CLJS
-
-See https://github.com.openvest/repl-balance/tree/master/repl-balance-cljs
 
 ## nREPL, SocketREPL, pREPL?
 
