@@ -8,9 +8,9 @@
             [repl-balance.test-helpers :refer [split-s-cur join-s-cur buf-test s-cur-test reader-test]])
   (:import [org.jline.reader.impl LineReaderImpl BufferImpl]))
 
-;; items marked ^:wip are work in progress where non error returns are produced
-;; with errors in cursor placement or whitespace
-;; we may decide to handle some of that with rewrite-clj to do some reformatting
+;; note on metadata:
+;; :whitespace indicates that the result is the proper sexp but has differing whitespace
+;; :cursor-pos indicates that the result is proper but but has a differing cursor position
 
 ;; some helper functions/macros
 (defmacro with-buffer
@@ -28,7 +28,6 @@
      (binding [j/*buffer* buffer#
                #_#_j/*line-reader* line-reader#]
        ~@body)))
-
 
 ;;;; String Only Tests
 (def s1 "(defn f[x y]\n  (+ x 8))")
@@ -505,7 +504,7 @@
            (-> (SUT/splice)
                (join-s-cur))))))
 
-(deftest ^:cursor-pos ^:kaocha/pending  splice-cursor-test
+(deftest splice-cursor-test
   ;; splice happens but cursor is misplaced
   (with-buffer
     #_>>>> "[1 2 [3 |4 5]]"
@@ -513,7 +512,7 @@
            (-> (SUT/splice)
                (join-s-cur))))))
 
-(deftest ^:wip splice-in-string-test
+(deftest splice-in-string-test
   ;; not sure if this is proper
   ;; this is the emacs and cursive behavior but could cause imbalanced parens
   ;; so, maybe it is not a good thing??
@@ -524,7 +523,7 @@
            (-> (SUT/splice)
                (join-s-cur))))))
 
-(deftest ^:cursor-pos ^:kaocha/pending splice-at-tail-test
+(deftest ^:cursor-pos splice-at-tail-test
   (with-buffer
     #_>>>> "[[1 2|] 3]"
     (is (= "[1 2 |3]"
@@ -539,7 +538,7 @@
            (-> (SUT/split)
                (join-s-cur))))))
 
-(deftest ^:cursor-pos ^:kaocha/pending split-at-last-node-test
+(deftest ^:cursor-pos split-at-last-node-test
   "this looks nearly identical to the above test
   it is still before the (node-2) but it fails"
   ;; note that rewrite-clj.paredit/split expects the loc to be to the left to the split target
@@ -549,8 +548,7 @@
            (-> (SUT/split)
                (join-s-cur))))))
 
-
-(deftest ^:cursor-pos ^:kaocha/pending split-at-coll-end-test
+(deftest split-at-coll-end-test
   (with-buffer
     #_>>>> "[[1 2|] 3]"
     (is (= "[[1 2]| [] 3]"

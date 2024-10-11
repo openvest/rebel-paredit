@@ -1,6 +1,7 @@
 # repl-balance
 
 [![Clojars Project](https://img.shields.io/clojars/v/com.openvest/repl-balance.svg?include_prereleases)](https://clojars.org/com.openvest/repl-balance)
+[![cljdoc badge](https://cljdoc.org/badge/com.openvest/repl-balance)](https://cljdoc.org/d/com.openvest/repl-balance/)
 
 A terminal readline library for Clojure Dialects.  Forked from rebel-readline this adds paredit fuctionality.
 
