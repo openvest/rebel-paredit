@@ -18,7 +18,6 @@
                                         "--middleware" "[cider.nrepl/cider-middleware]"
                                         "-i"
                                         "-f" "repl-balance.main/-main"]}
-           :repl         {:extra-paths ["repl"]}
            :test         {:extra-paths ["test"]
                           :extra-deps  {lambdaisland/kaocha {:mvn/version "1.91.1392"}
                                         ring/ring-spec      {:mvn/version "0.0.4"}

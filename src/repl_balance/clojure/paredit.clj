@@ -643,6 +643,26 @@
      ;; TODO: better cursor logic.  Maybe get it from the modified zloc above.
      [new-s (inc cur) #_(cond-> cur inside-string? inc)])))
 
+(defn join
+  "join two adjacent sexp or strings into one"
+  ([] (join j/*buffer*))
+  ([buf]
+   (let [s   (str buf)
+         cur (.cursor buf)
+         [new-s new-cur] (join s cur)]
+     (doto buf
+       (.clear)
+       (.write new-s)
+       (.cursor new-cur))))
+  ([s cur]
+   (let [pos (str-find-pos s cur)
+         zloc (-> s
+                  (z/of-string {:track-position? true})
+                  (z/find-last-by-pos pos))
+         new-s (-> (pe/join zloc)
+                   (z/root-string))]
+     [new-s (dec cur)])))
+
 (defn raise
   ([] (raise j/*buffer*))
   ([buf]

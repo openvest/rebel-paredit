@@ -615,6 +615,11 @@
     (paredit/split)
     true))
 
+(def paredit-join
+  (create-widget
+    (paredit/join)
+    true))
+
 (def paredit-forward
   (create-widget
     (paredit/forward)
@@ -1009,6 +1014,7 @@
     (register-widget "paredit-splice"             paredit-splice)
     (register-widget "paredit-raise"              paredit-raise)
     (register-widget "paredit-split"              paredit-split)
+    (register-widget "paredit-join"               paredit-join)
     (register-widget "paredit-forward"            paredit-forward)
     (register-widget "paredit-backward"           paredit-backward)
     (register-widget "paredit-line-comment"       paredit-line-comment)
@@ -1042,13 +1048,14 @@
     (key-binding (str (KeyMap/alt ";")) "paredit-node-comment")
     (key-binding (str (KeyMap/ctrl \D)) "delete-char")      ;; replaces delete-char-or-list binding
     (key-binding (str (KeyMap/alt \d)) "kill-word")
-
+    ;; in osx the alt key combinations are esc-... e.g. esc-s for paredit split
     (key-binding (str (KeyMap/ctrl \W)) "paredit-kill-region")
     (key-binding (str (KeyMap/alt \w))  "copy-region-as-kill")
     (key-binding (str (KeyMap/ctrl \K)) "paredit-kill")
-    (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp") ; osx esc-( works but not alt or command (
+    (key-binding (str (KeyMap/alt \()) "paredit-open-and-slurp")
     (key-binding (str (KeyMap/alt \s)) "paredit-splice")
     (key-binding (str (KeyMap/alt \S)) "paredit-split")
+    (key-binding (str (KeyMap/alt \J)) "paredit-join")
     (key-binding (str (KeyMap/alt \r)) "paredit-raise")
     ;; in linux use "sudo showkey -s" to experiment
     (key-binding (str (KeyMap/translate "^[[1;5C")) "paredit-slurp-forward")  ; windows ctrl-right-arrow

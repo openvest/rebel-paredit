@@ -289,16 +289,26 @@
             "[\"Hello, |world!\"]"
             "[\"Hello, \"| \"world!\"]"))
 
-#_(deftest paredit-join-sexp
-    "(hello)| (world)"
-    "(hello| world)"
+(deftest paredit-join
+  ;; join sexp
+  (buf-test SUT/join
+            "[hello]| [world]"
+            "[hello| world]")
+  ;; join string
+  (buf-test SUT/join
+            "\"Hello, \"| \"world!\""
+            "\"Hello, |world!\"")
+  ;; not sure about this one it's not an emacs behavior
+  #_(buf-test SUT/join
+            "hello-\n    | world"
+            "hello-|world"))
 
-    "\"Hello, \"| \"world!\""
-    "\"Hello, |world!\""
-
-    "hello-\n    | world"
-    "hello-|world"
-  )
+(deftest ^:kaocha/pending paredit-join-lists
+  "rewrite-clj forces join sexps to be of type vector.
+  submitted a report to rewrite-clj"
+  (buf-test SUT/join
+           "(hello)| (world)"
+           "(hello| world)"))
 
 #_(deftest paredit-recentre-on-sexp
   "no examples on ref card"

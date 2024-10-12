@@ -281,8 +281,8 @@
 
 ; add test for kill region this may require testing the widget
 (deftest kill-region-get-killed-delimiters
-  "kill region is unline other paredit actions in that
-   it uses the built in kill-region then reinserts
+  "kill region is unlike other paredit actions in that
+   it uses the built-in kill-region then reinserts
    required delimiters. this only tests those delimiters"
   (with-redefs [j/yank-from-killRing (fn [] "}]boo(")]
     (let [[closers openers] (SUT/get-killed-delimiters)]
