@@ -8,6 +8,7 @@
    [repl-balance.clojure.paredit :as paredit]
    [repl-balance.tools :as tools :refer [color color+ service-dispatch]]
    [repl-balance.utils :as utils :refer [log]]
+   [rewrite-clj.zip :as z]
    [rewrite-clj.parser :as p]
    [rewrite-clj.node :as n]
    [cljfmt.core :as fmt]
@@ -555,6 +556,34 @@
        (.move (- (count openers)))))
     true))
 
+(def paredit-yank
+  (create-widget
+    (call-widget ".yank")
+    (let [new-s (str api/*buffer*)]
+      (try
+        (z/of-string new-s)
+        (catch Exception _
+          ;; attempt to add the required missing delimiters
+          (let [yanked (api/yank-from-killRing)
+                yanked-len (count yanked)
+                [openers closers] (paredit/missing-yank-delimiters yanked)
+                cur (.cursor api/*buffer*)
+                new-new-s (str (subs new-s 0 (- cur yanked-len))
+                               openers
+                               yanked
+                               closers
+                               (subs new-s cur))]
+            (try
+              (z/of-string new-new-s)
+              (doto api/*buffer*
+                (.move (- yanked-len))
+                (.write openers)
+                (.move yanked-len)
+                (.write closers))
+              (api/display-message (str "added balancing delimiters "openers " " closers))
+              (catch Exception e (api/display-message (ex-message e))))))))
+    true))
+
 (def paredit-kill-debug
   (create-widget
     (let [join-s-cur (requiring-resolve 'repl-balance.test-helpers/join-s-cur)
@@ -1003,6 +1032,7 @@
     (register-widget "delete-char" paredit-delete-char )
     (register-widget "kill-word"   paredit-forward-kill-word )
     (register-widget "kill-whole-line"   paredit-kill-whole-line )
+    (register-widget "paredit-yank"   paredit-yank )
 
     (register-widget "paredit-kill"               paredit-kill)
     (register-widget "paredit-kill-region"        paredit-kill-region)
@@ -1049,6 +1079,7 @@
     (key-binding (str (KeyMap/alt ";")) "paredit-node-comment")
     (key-binding (str (KeyMap/ctrl \D)) "delete-char")      ;; replaces delete-char-or-list binding
     (key-binding (str (KeyMap/alt \d)) "kill-word")
+    (key-binding (str (KeyMap/ctrl \Y)) "paredit-yank")
     ;; in osx the alt key combinations are esc-... e.g. esc-s for paredit split
     (key-binding (str (KeyMap/ctrl \W)) "paredit-kill-region")
     (key-binding (str (KeyMap/alt \w))  "copy-region-as-kill")

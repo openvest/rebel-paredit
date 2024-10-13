@@ -98,25 +98,29 @@
 ;;;;;;;;;;;;;;;;;;;;;Widget copy functions
 
 
+;; first success at calling a wiget manually
+(binding [j/*buffer* (.getBuffer j/*line-reader*)]
+  (do (.set (j/get-accessible-field j/*line-reader* "reading") j/*line-reader* true)
+      (j/call-widget "kill-buffer")
+      (.write (.getBuffer j/*line-reader*) "foo")
+      (str j/*buffer*)))
 
-(def ap (:autopair-widgets @line-reader))
-(def ap-can-skip-field
-  (doto
-    (.getDeclaredMethod (class ap) "canSkip" (into-array [java.lang.String]))
-    (.setAccessible true)))
+(binding [j/*buffer* (.getBuffer j/*line-reader*)]
+  (let [buf (.getBuffer j/*line-reader*)]
+    (.set (j/get-accessible-field j/*line-reader* "reading") j/*line-reader* true)
+    (j/call-widget "kill-buffer")
+    (doto buf
+      (.write "[:foo]")
+      (.cursor 4))
+    (j/call-widget "paredit-kill")
+    (str j/*buffer*)))
+
 
 (comment
-  ;; TODO invoke not working
-  (.invoke ap-can-skip-field ap (into-array Object ["hi"]))
-  (def a (into-array ["hi"]))
-
   (def lr (LineReaderImpl. j/*terminal*))
-  (def ap (proxy [AutopairWidgets] [lr true]
-            ))
 
-  ;; can't get .invoke to work
   ;; works for 0 arity methods only
-  ;; works: (invoke-private-method "SomeLongStringToSubsequence" "subSequence" (int 4) (int 14))
-  ;; works: (invoke-private-method "someThing" "equalsIgnoreCase" "Something")
+  ;; works: (j/invoke-private-method "SomeLongStringToSubsequence" "subSequence" (int 4) (int 14))
+  ;; works: (j/invoke-private-method "someThing" "equalsIgnoreCase" "Something")
   ;; see j/invoke-private-method and j/get-private-field
   )

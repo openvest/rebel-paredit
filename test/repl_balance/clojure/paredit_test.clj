@@ -289,6 +289,12 @@
       (is (= "}]" closers))
       (is (= "(" openers)))))
 
+#_(deftest unbalanced-yank-text
+  "yank region is unlike other paredit actions in that
+   it uses the built-in yank then inserts iff they fix the buffer"
+  (with-redefs [j/yank-from-killRing (fn [] "}]boo(")]
+    (buf-test )))
+
 ;; slurp and barf tests
 
 (deftest slurp-forward-test

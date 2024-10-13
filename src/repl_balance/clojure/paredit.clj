@@ -364,17 +364,30 @@
              (.write (str closers openers))
              (.move (- (count openers)))))))
 
-(defn get-killed-delimiters []
-  (let [killed (j/yank-from-killRing)
-        tokens (tokenize/tag-sexp-traversal killed)
-        closers (some->> (sexp/find-open-sexp-ends tokens 0)
-                         (map first)
-                         (apply str))
-        openers (some->> (sexp/find-open-sexp-starts tokens (count killed))
-                         (map first)
-                         reverse
-                         (apply str))]
-    [closers openers]))
+(defn get-killed-delimiters
+  "after a kill, inspect the killed text and find
+  the delimiters killed that should be reinserted to maintain balance"
+  ([] (get-killed-delimiters (j/yank-from-killRing)))
+  ([killed]
+   (let [tokens (tokenize/tag-sexp-traversal killed)
+         closers (some->> (sexp/find-open-sexp-ends tokens 0)
+                          (map first)
+                          (apply str))
+         openers (some->> (sexp/find-open-sexp-starts tokens (count killed))
+                          (map first)
+                          reverse
+                          (apply str))]
+     [closers openers])))
+
+;; TODO: if this works for yank can we get it to work for yank from clipboard?
+;;       i.e. see "begin-paste" widget bound to "^[[200~"
+(defn missing-yank-delimiters
+  "add delimiters to text that is being added from the kill ring to make the inserted
+  text balanced returns [openers closers] to be added before and after insert text"
+  [killed]
+  (let [reverse-delimiter {\( \), \) \(, \[ \], \] \[, \{ \}, \} \{}]
+    (->> (get-killed-delimiters killed)
+         (mapv #(apply str (map reverse-delimiter %))))))
 
 ;; slurp and barf
 
