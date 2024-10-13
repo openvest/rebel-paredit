@@ -1045,6 +1045,7 @@
     (key-binding "]" "paredit-close-round")
     (key-binding "}" "paredit-close-round")
     (key-binding ";" "paredit-line-comment")
+    (key-binding (str (KeyMap/ctrl \J)) "clojure-force-accept-line")
     (key-binding (str (KeyMap/alt ";")) "paredit-node-comment")
     (key-binding (str (KeyMap/ctrl \D)) "delete-char")      ;; replaces delete-char-or-list binding
     (key-binding (str (KeyMap/alt \d)) "kill-word")

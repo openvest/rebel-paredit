@@ -870,7 +870,20 @@
       (doto buf (.write (.getLastBinding j/*line-reader*)))
       ;; at buff end or just not inside a list
       (nil? end)
-      buf  ;; send a message?
+      (try
+        (z/of-string s)
+        buf
+        (catch Exception _
+          ;; orig buffer is now correct so see if this fixes it
+          (try
+            (let [delim (.getLastBinding j/*line-reader*)
+                  new-s (str s delim)]
+              (z/of-string new-s)
+              (j/display-message (str "allowed correcting " delim))
+              (doto buf
+                (.write delim)))
+            (catch Exception e (j/display-message (str "imbalanced parens"))))))
+
       :default
       (let [space-before-delimiter (count (re-find #"\s+$" (subs s 0 (dec end))))]
         (.cursor buf end)

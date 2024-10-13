@@ -26,6 +26,12 @@
               "; Hello,| world!"
               "; Hello,]| world!"))
 
+(deftest paredit-close-round-correcting-delim
+  "if the buffer is unbalanced but the delimititer fixes it then allow it"
+  (reader-test SUT/close-round "]"
+               "[[:foo]|[:bar]"
+               "[[:foo]]|[:bar]"))
+
 #_(deftest ^:autopair paredit-close-round-and-newline
   "Not sure about this example. It's more lispy than clojure
   Maybe work with square brackets?"
