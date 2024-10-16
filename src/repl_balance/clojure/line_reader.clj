@@ -449,7 +449,7 @@
     0
     (if-let [prx (indent-proxy-str s cursor)]
       ;; lazy-load for faster start up
-      (let [reformat-string (utils/require-resolve-var 'cljfmt.core/reformat-string)]
+      (let [reformat-string (requiring-resolve 'cljfmt.core/reformat-string)]
         (try (->>
               (reformat-string prx {:remove-trailing-whitespace? false
                                     :insert-missing-whitespace? false

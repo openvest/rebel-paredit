@@ -34,14 +34,6 @@
             :else nil)))
       :dark))
 
-(defn require-resolve-var [var-sym]
-  (when (symbol? var-sym)
-    (or (resolve var-sym)
-        (when-let [ns (namespace var-sym)]
-          (when (try (require (symbol ns)) true (catch Throwable t false))
-            (when-let [var (resolve var-sym)]
-              var))))))
-
 (defn load-slow-deps! []
   (.start
    (Thread.

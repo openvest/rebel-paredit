@@ -1,6 +1,6 @@
 (ns repl-balance.clojure.service.simple
   (:require
-   [repl-balance.clojure.line-reader :as lr]
+   [repl-balance.clojure.line-reader :as clj-reader]
    [repl-balance.tools :as tools]))
 
 (defn create
@@ -14,6 +14,6 @@
   ([options]
    (merge
     {:prompt (fn [] (println "clj=> "))}
-    lr/default-config
+    clj-reader/default-config
     (tools/user-config)
     options)))
