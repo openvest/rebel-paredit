@@ -88,7 +88,7 @@
       (print)))
 
 ;;
-(-> (line-reader/clojure-highlighter)
+(-> (line-reader/clojure-highlighter+)
     (.highlight (line-reader/create service) "(def foo [:bar :food])")
     (j/->ansi)
     (print))

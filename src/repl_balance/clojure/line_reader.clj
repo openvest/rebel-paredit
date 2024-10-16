@@ -1332,7 +1332,8 @@
 ;; Jline highlighter for Clojure code
 ;; ----------------------------------------
 
-(defn clojure-highlighter []
+(defn ^:deprecated clojure-highlighter []
+  ;; was used before highlighting of selection was introduced
   (proxy [Highlighter] []
     (highlight [^LineReader reader ^String buffer]
       ;; this gets called on a different thread

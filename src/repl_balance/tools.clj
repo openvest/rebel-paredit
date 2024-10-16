@@ -282,7 +282,8 @@
     (if (nil? token)
       (when (<= cur end-hl)
         ;; no more tokens but more to highlight
-        [[(subs s cur end-hl) cur end-hl :insert-highlight]])
+        (let [beg-hl* (max beg-hl cur)]
+         [[(subs s beg-hl* end-hl) beg-hl* end-hl :insert-highlight]]))
       (cond
         ;; token ends before highlighting begins (b)
         (<= end beg-hl)

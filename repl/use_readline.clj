@@ -115,6 +115,43 @@
     (j/call-widget "paredit-kill")
     (str j/*buffer*)))
 
+(do (.set (j/get-accessible-field j/*line-reader* "reading") j/*line-reader* true)
+    (j/call-widget "kill-buffer")
+    (let [buf (.getBuffer j/*line-reader*)]
+      (doto buf
+        (.write ":foo")
+        (.cursor 2))
+      (j/call-widget "paredit-kill")
+      (str (.getBuffer j/*line-reader*))))
+
+
+
+
+(defn set-reading
+  [obj]
+  (-> obj
+      .getClass
+      (.getDeclaredField "reading")
+      (doto
+          (.setAccessible true)
+          (.set obj true))))
+
+(def lr (let [terminal (-> (TerminalBuilder/builder)
+                              (.system true)
+                              (.build))]
+          (LineReaderImpl. terminal "foo")))
+(set-reading lr)
+
+(binding [j/*line-reader* lr
+          j/*buffer* (.getBuffer lr)]
+  (j/register-widget "slurp-forward" repl-balance.clojure.line-reader/paredit-slurp-forward)
+  (j/call-widget "kill-buffer")
+  (doto j/*buffer*
+    (.write "[[:foo] :bar]")
+    (.cursor 6))
+  (j/call-widget "slurp-forward")
+  (.write j/*buffer* "|") 
+  (str (.getBuffer j/*line-reader*)))
 
 (comment
   (def lr (LineReaderImpl. j/*terminal*))
@@ -124,3 +161,14 @@
   ;; works: (j/invoke-private-method "someThing" "equalsIgnoreCase" "Something")
   ;; see j/invoke-private-method and j/get-private-field
   )
+
+
+(defn version-vec [v]
+  (->> (str v ".0.0.0")
+       (re-seq #"[0-9]+")
+       (map Integer/parseInt)
+       (take 3)
+       vec))
+
+(sort-by version-vec
+         ["v1.99.123" "v1.33.987" "v1.0.0"])

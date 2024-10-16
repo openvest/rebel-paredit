@@ -6,6 +6,7 @@
         ;org.jline/jline-terminal-jansi {:mvn/version "3.26.2"}
         cljfmt/cljfmt {:mvn/version "0.9.2"}
         rewrite-clj/rewrite-clj {:mvn/version "1.1.48"}
+        nrepl/nrepl               {:mvn/version "1.1.1"}
         compliment/compliment {:mvn/version "0.6.0"}}
  :aliases {:repl/balance {:extra-paths ["repl"]
                           :extra-deps  {nrepl/nrepl               {:mvn/version "1.1.1"}
