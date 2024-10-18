@@ -19,6 +19,7 @@
             [org.jline.terminal Terminal]
             [org.jline.utils AttributedStringBuilder AttributedString AttributedStyle]))
 
+
 (defmacro def-let
   "This is the standard let macro with the exception that
   it promotes all of the let binding variables to global scope
@@ -39,6 +40,13 @@
        (do 
          ~@global-defs)
        ~@body)))
+
+(comment
+  ;is there a better def-let by using &env  as in
+  (defmacro local-context []
+    (let [symbols (keys &env)]
+      (zipmap (map (fn [sym] `(quote ~sym)) symbols) symbols)))
+  )
 
 #_(def-let [a 8
           {:keys [aa] :as m} {:aa 33}

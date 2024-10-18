@@ -1361,8 +1361,7 @@
                              (> cur mark) {:beg-hl mark :end-hl cur})))
                 tokens (cond-> (sexp/tag-font-lock+ buffer cur)
                                region (tools/tokenize-highlight+ buffer 0 region))]
-            (do display-message (str :region region)
-             (.toAttributedString (tools/highlight-tokens color+ tokens buffer))))
+            (.toAttributedString (tools/highlight-tokens color+ tokens buffer)))
           (AttributedString. buffer))))))
 
 ;; ----------------------------------------

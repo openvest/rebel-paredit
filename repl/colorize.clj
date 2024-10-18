@@ -105,7 +105,7 @@
              (format  "faint:%3s" i)
              (.faint (t/fg-color i)))))
 
-; direct version
+; direct versionna
 (-> (AttributedStringBuilder.)
     (.append "hi ")
     (.styled (t/fg-color 120) "there")
