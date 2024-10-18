@@ -3,10 +3,13 @@
 [![Clojars Project](https://img.shields.io/clojars/v/com.openvest/repl-balance.svg?include_prereleases)](https://clojars.org/com.openvest/repl-balance)
 [![cljdoc badge](https://cljdoc.org/badge/com.openvest/repl-balance)](https://cljdoc.org/d/com.openvest/repl-balance/)
 
-A terminal readline library for Clojure Dialects.  Forked from rebel-readline this adds paredit fuctionality.
+**No** you **DO NOT** need an ide(s)+plugins or an editor+packages to have a positive repl experience.
 
+`repl-balance` is a terminal readline library for Clojure Dialects.  Forked from rebel-readline this adds paredit fuctionality.
+
+<!--
 [![asciicast](https://asciinema.org/a/160597.png)](https://asciinema.org/a/160597)
-
+-->
 ## Why create a terminal readline library?
 
 - no-editor required (no ide requirements for new clojure devs)
@@ -47,109 +50,11 @@ And then run with a simpler:
 ```shell
 $ clojure -M:repl/balance
 ```
-
-#### Leiningen
-
-Add `[com.openvest/repl-balance "0.2.102"]` to the dependencies in your
-`project.clj` then start a REPL like this:
-
-```shell
-lein trampoline run -m repl-balance.main
-```
-
-Alternatively, you can add repl-balance globally to `$HOME/.lein/profiles.clj`
-
-```clojure
-{
- ...
- :user {:dependencies [[com.openvest/repl-balance "RELEASE"]]}
-}
-```
-
-Then you can call
-
-```shell
-lein trampoline run -m repl-balance.main
-```
-
-To make this less verbose you can use an alias in your `project.clj`:
-
-```clojure
-{
- ...
- :aliases {"repl-balance" ["trampoline" "run" "-m" "repl-balance.main"]}
-}
-```
-
-Alternatively, you can do this globally in `$HOME/.lein/profiles.clj`:
-
-```clojure
-{
- ...
- :user {:aliases {"repl-balance" ["trampoline" "run" "-m" "repl-balance.main"]}}
-}
-```
-
-Now you can start a repl-balance REPL with `lein repl-balance`.
-
-
-## Quick Lay of the land
-
-You should look at `repl-balance.clojure.main` and `repl-balance.core`
-to give you top level usage information.
-
-The core of the functionality is in
-`repl-balance.clojure.line-reader` everything else is just support.
-
-## Quick Usage
-
-These are some quick examples demonstrating how to use the repl-balance
-API.
-
-The main way to utilize this readline editor is to replace the
-`clojure.main/repl-read` behavior in `clojure.main/repl`.
-
-The advantage of doing this is that it won't interfere with the input
-stream if you are working on something that needs to read from
-`*in*`. This is because the line-reader will only be engaged when the
-REPL loop is reading.
-
-Example:
-
-```clojure
-(repl-balance.core/with-line-reader
-  (repl-balance.clojure.line-reader/create
-    (repl-balance.clojure.service.local/create))
-  (clojure.main/repl
-     :prompt (fn []) ;; prompt is handled by line-reader
-     :read (repl-balance.clojure.main/create-repl-read)))
-```
-
-Another option is to just wrap a call you your REPL with
-`repl-balance.core/with-readline-in` this will bind `*in*` to an
-input-stream that is supplied by the line reader.
-
-```clojure
-(repl-balance.core/with-readline-in
-  (repl-balance.clojure.line-reader/create
-    (repl-balance.clojure.service.local/create))
-  (clojure.main/repl :prompt (fn[])))
-```
-
-Or with a fallback:
-
-```clojure
-(try
-  (repl-balance.core/with-readline-in
-    (repl-balance.clojure.line-reader/create
-      (repl-balance.clojure.service.local/create))
-    (clojure.main/repl :prompt (fn[])))
-  (catch clojure.lang.ExceptionInfo e
-    (if (-> e ex-data :type (= :repl-balance.jline-api/bad-terminal))
-      (do (println (.getMessage e))
-        (clojure.main/repl))
-      (throw e))))
-```
+## User docs
+Additional user documentation is in the [project wiki](https://github.com/openvest/repl-balance/wiki/User-Documentation.)
+## Paredit
+Checkout the paredit docs page but if you are familiar with emacs paredit commands
+you should be off and running without additional help
 
 ## Services
 
@@ -177,18 +82,14 @@ functionality that rebel readline provides works without an
 environment to query. And the apropos, doc and completion functionality is
 still sensible when you provide those abilities from the local clojure process.
 
-This could be helpful when you have a Clojurey REPL process and you
+This could be helpful when you have a Clojure REPL process and you
 don't have a Service for it. In this case you can just use a
 `clojure.service.local` or a `clojure.service.simple` service. If you
 do this you can expect less than optimal results but multi-line
 editing, syntax highlighting, auto indenting will all work just fine.
 
 
-## nREPL, SocketREPL, pREPL?
 
-Services have not been written for these REPLs yet!!
-
-But you can use the `repl-balance.clojure.service.simple` service in the meantime.
 
 ## Contributing
 
@@ -198,21 +99,11 @@ I'm trying to mark issues with `help wanted` for issues that I feel
 are good opportunities for folks to help out. If you want to work on
 one of these please mention it in the issue.
 
-If you do contribute:
+Most desired needs for contributors are:
 
-* if the change isn't small please file an issue before a PR.
-* please put all PR changes into one commit
-* make small grokable changes. Large changes are more likely to be
-  ignored and or used as a starting issue for exploration.
-* break larger solutions down into a logical series of small PRs
-* mention it at the start, if you are filing a PR that is more of an
-  exploration of an idea
-
-I'm going to be more open to repairing current behavior than I will be
-to increasing the scope of repl-balance.
-
-I will have a preference for creating hooks so that additional functionality
-can be layered on with libraries.
+  * A vim user to help add vim bindings for the paredit widgets (fireplace or conjure anyone?)
+  * An OSX user to help create and test OSX bindings (I have osx but with my own os level key bindings and a custom keyboard)
+  * Any nrepl or java threading help (java is not a language I know well)
 
 
 ## License
