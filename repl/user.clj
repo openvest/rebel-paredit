@@ -4,6 +4,7 @@
              [rewrite-clj.zip :as z]
              [rewrite-clj.node :as n]
              [repl-balance.jline-api :as j]
+             [repl-balance.clojure.line-reader :as line-reader]
              [repl-balance.tools :as t]
              [repl-balance.clojure.paredit :as pe]
              [repl-balance.clojure.tokenizer :as tokenizer]
@@ -66,6 +67,13 @@
   (let [new-ns (first @ns-stack)]
     (swap! ns-stack rest)
     (in-ns new-ns)))
+
+(defn jmethods [thing]
+  (->> (reflect thing)
+       :members
+       (filter (comp :public :flags))
+       (filter (comp :parameter-types))
+       (map :name)))
 
 (comment
   ;; how to get imports or require map from another file

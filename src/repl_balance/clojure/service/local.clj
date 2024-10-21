@@ -1,6 +1,6 @@
 (ns repl-balance.clojure.service.local
   (:require
-   [repl-balance.clojure.line-reader :as clj-reader]
+   [repl-balance.clojure.line-reader :as line-reader]
    [repl-balance.clojure.utils :as clj-utils]
    [repl-balance.tools :as tools]
    [repl-balance.utils :as utils]
@@ -62,30 +62,30 @@
         (assoc (meta ns')
                :ns var-str))))
 
-(derive ::service ::clj-reader/clojure)
+(derive ::service ::line-reader/clojure)
 
-(defmethod clj-reader/-resolve-meta ::service [_ var-str]
+(defmethod line-reader/-resolve-meta ::service [_ var-str]
   (resolve-meta var-str))
 
-(defmethod clj-reader/-complete ::service [_ word options]
+(defmethod line-reader/-complete ::service [_ word options]
   ;; lazy-load for faster startup
   (when-let [completions (requiring-resolve 'compliment.core/completions)]
     (if options
       (completions word options)
       (completions word))))
 
-(defmethod clj-reader/-current-ns ::service [_]
+(defmethod line-reader/-current-ns ::service [_]
   (some-> *ns* str))
 
-(defmethod clj-reader/-source ::service [_ var-str]
+(defmethod line-reader/-source ::service [_ var-str]
   (some->> (clojure.repl/source-fn (symbol var-str))
            (hash-map :source)))
 
-(defmethod clj-reader/-apropos ::service [_ var-str]
+(defmethod line-reader/-apropos ::service [_ var-str]
   (clojure.repl/apropos var-str))
 
-(defmethod clj-reader/-doc ::service [self var-str]
-  (when-let [{:keys [ns name]} (clj-reader/-resolve-meta self var-str)]
+(defmethod line-reader/-doc ::service [self var-str]
+  (when-let [{:keys [ns name]} (line-reader/-resolve-meta self var-str)]
     ;; lazy-load for faster startup
     (when-let [documentation (requiring-resolve 'compliment.core/documentation)]
       (when-let [doc (documentation var-str)]
@@ -93,7 +93,7 @@
           (cond-> {:doc doc}
             url (assoc :url url)))))))
 
-(defmethod clj-reader/-eval ::service [self form]
+(defmethod line-reader/-eval ::service [self form]
   (let [res (call-with-timeout
              #(data-eval form)
              (get self :eval-timeout 3000))]
@@ -102,7 +102,7 @@
       (set! *e ex))
     res))
 
-(defmethod clj-reader/-read-string ::service [self form-str]
+(defmethod line-reader/-read-string ::service [self form-str]
   (when (string? form-str)
     (try
       {:form (with-in-str form-str
@@ -113,7 +113,7 @@
 (defn create
   ([] (create nil))
   ([options]
-   (merge clj-reader/default-config
+   (merge line-reader/default-config
           (tools/user-config)
           options
           {:repl-balance.service/type ::service})))

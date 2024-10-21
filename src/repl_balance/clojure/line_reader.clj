@@ -1405,7 +1405,7 @@
   The available options are:
 
   :completer - to override the clojure based completer
-  :highlighter - to override the clojure based systax highlighter
+  :highlighter - to override the clojure based syntax highlighter
   :parser - to override the clojure base word parser"
   [service & [options]]
   (create* api/*terminal* service options))
