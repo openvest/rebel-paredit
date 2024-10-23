@@ -449,7 +449,7 @@
     0
     (if-let [prx (indent-proxy-str s cursor)]
       ;; lazy-load for faster start up
-      (let [reformat-string (utils/require-resolve-var 'cljfmt.core/reformat-string)]
+      (let [reformat-string (requiring-resolve 'cljfmt.core/reformat-string)]
         (try (->>
               (reformat-string prx {:remove-trailing-whitespace? false
                                     :insert-missing-whitespace? false
@@ -1361,8 +1361,7 @@
                              (> cur mark) {:beg-hl mark :end-hl cur})))
                 tokens (cond-> (sexp/tag-font-lock+ buffer cur)
                                region (tools/tokenize-highlight+ buffer 0 region))]
-            (do display-message (str :region region)
-             (.toAttributedString (tools/highlight-tokens color+ tokens buffer))))
+            (.toAttributedString (tools/highlight-tokens color+ tokens buffer)))
           (AttributedString. buffer))))))
 
 ;; ----------------------------------------
@@ -1406,7 +1405,7 @@
   The available options are:
 
   :completer - to override the clojure based completer
-  :highlighter - to override the clojure based systax highlighter
+  :highlighter - to override the clojure based syntax highlighter
   :parser - to override the clojure base word parser"
   [service & [options]]
   (create* api/*terminal* service options))
