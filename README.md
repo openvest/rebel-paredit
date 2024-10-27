@@ -27,7 +27,7 @@ If you want to try this really quickly
 and then invoke this:
 
 ```shell
-clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.2.102\"}}}" -m repl-balance.main
+clojure -Sdeps "{:deps {com.openvest/repl-balance {:mvn/version \"0.2.114\"}}}" -m repl-balance.main
 ```
 
 That should start a Clojure REPL that takes its input from the ReplBalance readline editor.
@@ -40,7 +40,7 @@ Alternatively you can specify an alias in your `$HOME/.clojure/deps.edn`
 ```clojure
 {
  ...
- :aliases {:repl/balance {:extra-deps {com.openvest/repl-balance {:mvn/version "0.2.102"}}
+ :aliases {:repl/balance {:extra-deps {com.openvest/repl-balance {:mvn/version "0.2.114"}}
                           :main-opts  ["-m" "repl-balance.main"]}}
 }
 ```
