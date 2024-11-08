@@ -65,12 +65,12 @@
       (catch Throwable e
         {:exception (Throwable->map e)}))))
 
-(defmethod -eval-str ::service [service form-str]
+(defmethod line-reader/-eval-str ::service [service form-str]
   (try
     (let [msgs (nrepl/message (:client @*line-reader*) form-str)])
-    (let [res (-read-string service form-str)]
+    (let [res (line-reader/-read-string service form-str)]
       (if (contains? res :form)
-        (-eval service (:form res))
+        (line-reader/-eval service (:form res))
         res))
     (catch Throwable e
       (set! *e e)
@@ -101,37 +101,46 @@
    :tls-keys-file (:tls-keys-file options)})
 
 
-(comment
+(do
   ;smallest socket opener just a java socket
   (def socket (java.net.Socket. "127.0.0.1" 8282))
   ;smallest transport
   ;socket wrapped with bencode that can send and recv a map
   ;returns an object that implements the send, recv and close methods
   (def transport (transport/bencode socket))
-  (comment
-    ;; transport does some threading stuff to send or recv a map
-    (transport/send transport {:op :eval :code "(inc 99)"})
-    (transport/recv transport 5000))
+  (swap! j/*line-reader* assoc :transport transport)
+  (nrepl-printer transport)
+  )
+
+;; nrepl.cmdline has an atom to store transport and client
+;; we should have them attached to the j/*line-reader*
+(comment
+  ;; transport does some threading stuff to send or recv a map
+  (transport/send transport {:op :eval :code "(inc 99)"})
+  (transport/recv transport 5000)
+
   ;; client collects up recv messages
   (def client (nrepl/client transport 3600000)) ;; will return nil after 1 hr
   ;; session is the same as a client but with a sticky session-id
   (def session (nrepl/client-session client))
   ;;(nrepl/message session {:op :eval :code "(gensym 'some_response_)"})
+  (swap! j/*line-reader* assoc :client session)
   )
 
-;; nrepl.cmdline has an atom to store transport and client
-;; we should have them attached to the j/*line-reader*
-(comment (let [session (nrepl/client-session client)]
-           (swap! j/*line-reader* assoc :client session)
-           (swap! j/*line-reader* assoc :transport transport)
-           ;; or maybe
-           #_ (swap! j/*line-reader* assoc :transport (::nrepl/transport (meta client)))))
+(comment
+  (def nrepl-client
+    (j/create-widget
+      (do (let [transport (:transport @j/*line-reader*)
+                code-str (str (.getBuffer j/*line-reader*))]
+            (transport/send transport {:op :eval :code code-str}))
+          true)))
 
-(j/create-widget
-  (do (let [transport (:transport @j/*line-reader*)
-            code-str (str (.getBuffer j/*line-reader*))]
-        (transport/send transport {:op :eval :code code-str}))
-      true))
+  (j/register-widget "nrepl-client" nrepl-client)
+
+  (j/key-binding :emacs (str (KeyMap/ctrl \X) (KeyMap/ctrl \X)) "nrepl-client")
+  (j/apply-key-bindings!)
+  (j/set-main-key-map! :emacs)
+  )
 
 (defn create
   ([] (create nil))

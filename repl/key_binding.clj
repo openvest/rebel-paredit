@@ -36,11 +36,7 @@
 ;; create-widget is a macro that creats a function
 ;; that function will take a line-reader and
 ;; create a method (using reify) to execute
-(defn paredit-open-round-fn
-  ([] (paredit-open-round-fn j/*buffer*))
-  ([buf] (doto buf
-           (.write "(pe-open) ")
-           (.move -2))))
+
 
 (def paredit-open-round
  (create-widget

@@ -246,16 +246,6 @@
 
 (str (z/node (find-loc z 20)))
 
-;;; example of editing a token node
-(-> "(def-let [x 3]
-      (inc x))"
-    (z/of-string {:track-position? true})
-    (z/find-last-by-pos pos)
-    ;(#'paredit/kill-at-pos pos)
-    (z/edit (comp symbol #(subs % 4) str))
-    z/node
-    n/tag)
-
 (defn kill
   ([] (kill j/*buffer*))
   ([buf]
